@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History — RetailScan</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={corePlugins:{preflight:false},theme:{extend:{colors:{primary:{DEFAULT:'#6366f1',dark:'#4f46e5',light:'#e0e7ff'},secondary:'#8b5cf6',accent:'#06b6d4'}}}}</script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <!-- PWA -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="RetailScan">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/icon-96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/icon-72.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="RetailScan">
+    <meta name="msapplication-TileColor" content="#6366f1">
+    <meta name="msapplication-TileImage" content="/static/icons/icon-144.png">
+<body>
+    <div class="fixed inset-0 overflow-hidden pointer-events-none" style="z-index:-1;">
+        <div class="particle particle-1"></div><div class="particle particle-2"></div>
+        <div class="particle particle-3"></div><div class="particle particle-4"></div>
+        <div class="particle particle-5"></div>
+    </div>
+
+    <!-- ████ RESPONSIVE NAVBAR ████ -->
+    <nav class="navbar navbar-expand-md glass-nav sticky-top" style="z-index:1050;">
+        <div class="container-xl px-3 px-sm-4">
+
+            <!-- Brand (always visible) -->
+            <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none py-2" href="/">
+                <div class="nav-brand-icon"><i class="fas fa-bolt text-white"></i></div>
+                <span class="nav-brand-text">RetailScan</span>
+            </a>
+
+            <!-- Mobile: quick-cart badge + animated hamburger -->
+            <div class="d-flex align-items-center gap-2 d-md-none">
+                <a href="/cart" class="position-relative p-1 text-decoration-none" style="color:var(--text-secondary);">
+                    <i class="fas fa-bag-shopping fa-lg"></i>
+                    <span id="nav-cart-count-mob" class="cart-badge nav-cart-badge position-absolute"
+                          style="top:-4px;right:-6px;font-size:.58rem;padding:1px 5px;min-width:16px;">0</span>
+                </a>
+                <button class="rs-toggler" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#navbarMain"
+                        aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="rs-bar"></span>
+                    <span class="rs-bar"></span>
+                    <span class="rs-bar"></span>
+                </button>
+            </div>
+
+            <!-- Collapsible panel -->
+            <div class="collapse navbar-collapse" id="navbarMain" style="visibility:visible;">
+
+                <!-- Nav links: stacked on mobile, row on desktop -->
+                <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center
+                            ms-md-auto gap-1 pt-2 pt-md-0 pb-2 pb-md-0 px-1 px-md-0">
+                    <a href="/" class="rs-nav-link"><i class="fas fa-crosshairs"></i> Scanner</a>
+                    <a href="/cart" class="rs-nav-link"><i class="fas fa-bag-shopping"></i> Cart
+                        <span id="nav-cart-count" class="cart-badge nav-cart-badge ms-1">0</span></a>
+                    <a href="/history" class="rs-nav-link active"><i class="fas fa-clock-rotate-left"></i> History</a>
+                    <a href="/payment" class="rs-nav-link"><i class="fas fa-wallet"></i> Pay</a>
+                    <a href="/offers" class="rs-nav-link"><i class="fas fa-tag"></i> Offers</a>
+                </div>
+
+                <!-- Mobile only: user info + logout -->
+                <div class="rs-mobile-user d-md-none">
+                    <div class="rs-mobile-user-info">
+                        <div id="user-avatar-mob" class="nav-user-avatar flex-shrink-0">
+                            <span id="avatar-initials-mob"></span>
+                        </div>
+                        <div style="min-width:0;">
+                            <p id="dropdown-name-mob"  class="mb-0 fw-semibold text-truncate" style="color:var(--text-primary);font-size:.9rem;"></p>
+                            <p id="dropdown-email-mob" class="mb-0 text-truncate"              style="color:var(--text-secondary);font-size:.78rem;"></p>
+                            <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                                <span id="dropdown-tier-badge-mob"></span>
+                                <span id="dropdown-reward-points-mob"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="handleLogout()" class="rs-logout-btn">
+                        <i class="fas fa-arrow-right-from-bracket"></i> Logout
+                    </button>
+                </div>
+
+                <!-- Desktop only: user avatar + dropdown -->
+                <div class="d-none d-md-flex align-items-center ms-2 position-relative">
+                    <div id="user-avatar" class="nav-user-avatar" onclick="toggleUserDropdown()" title="Account">
+                        <span id="avatar-initials"></span>
+                    </div>
+                    <div id="user-dropdown" class="user-dropdown">
+                        <div class="px-4 py-3" style="border-bottom:1px solid rgba(99,102,241,.1);">
+                            <p id="dropdown-name"  class="mb-0 fw-semibold" style="color:var(--text-primary);font-size:.875rem;"></p>
+                            <p id="dropdown-email" class="mb-0 mt-1"        style="color:var(--text-secondary);font-size:.78rem;"></p>
+                            <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                                <span id="dropdown-tier-badge"></span>
+                                <span id="dropdown-reward-points"></span>
+                            </div>
+                        </div>
+                        <div class="p-1">
+                            <a href="/profile" class="user-dropdown-item">
+                                <i class="fas fa-user-circle"></i><span>My Profile</span>
+                            </a>
+                            <button onclick="handleLogout()" class="user-dropdown-item danger w-100">
+                                <i class="fas fa-arrow-right-from-bracket"></i><span>Logout</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /collapse -->
+        </div>
+    </nav>
+
+    <main class="py-4 py-lg-5 rs-page-main" style="position:relative;z-index:1;">
+        <div class="container-xl px-3 px-sm-4" style="max-width:880px;">
+
+            <div class="mb-4 animate-fade-in-up">
+                <h1 class="fw-bold mb-1" style="font-size:clamp(1.5rem,4vw,2.2rem);color:var(--text-primary);">
+                    Purchase
+                    <span style="background:linear-gradient(135deg,#8b5cf6,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">History</span>
+                </h1>
+                <p class="mb-0" style="color:var(--text-secondary);font-size:.9rem;">A full record of all your completed transactions.</p>
+            </div>
+
+            <div class="glass-card animate-fade-in-up overflow-hidden">
+                <!-- Header + filter -->
+                <div class="card-header-bar flex-wrap gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-violet"><i class="fas fa-clock-rotate-left"></i></div>
+                        <h2 class="mb-0">Transactions</h2>
+                    </div>
+                    <div class="d-flex flex-wrap align-items-center gap-2">
+                        <div class="input-group" style="width:auto;">
+                            <span class="input-group-text" style="background:#f8faff;border:1.5px solid #e0e7ff;border-right:none;">
+                                <i class="fas fa-calendar-days small" style="color:var(--primary);"></i>
+                            </span>
+                            <input type="date" id="filter-date" class="form-control form-control-sm"
+                                   style="background:#f8faff;border:1.5px solid #e0e7ff;border-left:none;color:var(--text-primary);min-width:140px;">
+                        </div>
+                        <button id="btn-filter" class="d-flex align-items-center gap-1 px-3 py-2 rounded-3 border-0 fw-semibold"
+                                style="background:var(--primary-light);color:var(--primary);font-size:.8rem;cursor:pointer;">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
+                        <button id="btn-clear-filter" class="d-flex align-items-center gap-1 px-3 py-2 rounded-3 border-0 fw-semibold"
+                                style="background:#fee2e2;color:#dc2626;font-size:.8rem;cursor:pointer;">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+
+                <div id="history-list" class="p-4" style="min-height:220px;">
+                    <div class="text-center py-5">
+                        <div class="icon-badge icon-badge-violet mx-auto mb-3" style="width:68px;height:68px;border-radius:18px;font-size:1.8rem;">
+                            <i class="fas fa-receipt"></i>
+                        </div>
+                        <p class="fw-semibold mb-1" style="color:var(--text-primary);">No transactions yet</p>
+                        <p class="mb-3" style="color:var(--text-secondary);font-size:.85rem;">Complete a purchase to see it here</p>
+                        <a href="/" class="btn-glow-primary" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 4px 14px rgba(99,102,241,.35);">
+                            <i class="fas fa-crosshairs"></i> Start Shopping
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="/static/js/loader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/nav-user.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/history.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+    <script src="/static/js/confetti.js"></script>
+    <script src="/static/js/shortcuts.js"></script>
+    <!-- ████ MOBILE BOTTOM NAV (hidden on md+) ████ -->
+    <!-- Footer -->
+    <footer class="rs-footer no-lift">
+        <div class="rs-footer-brand"><i class="fas fa-bolt me-1"></i>RetailScan <span style="opacity:.6;font-weight:500;">v2.0</span></div>
+        <div class="rs-footer-sub">AI-Powered Smart Retail Checkout Platform &nbsp;·&nbsp; Press <kbd style="font-size:.65rem;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2);border-radius:4px;padding:1px 5px;color:var(--primary);">Shift+?</kbd> for shortcuts</div>
+    </footer>
+
+    <nav class="rs-bottom-nav" aria-label="Bottom navigation">
+        <div class="rs-bottom-nav-inner">
+            <a href="/" class="rs-bottom-nav-item" aria-label="Scanner">
+                <i class="fas fa-crosshairs"></i>
+                <span>Scan</span>
+            </a>
+            <a href="/cart" class="rs-bottom-nav-item" aria-label="Cart" style="position:relative;">
+                <i class="fas fa-bag-shopping"></i>
+                <span class="rs-bottom-nav-badge nav-cart-badge">0</span>
+                <span>Cart</span>
+            </a>
+            <a href="/history" class="rs-bottom-nav-item active" aria-label="History">
+                <i class="fas fa-clock-rotate-left"></i>
+                <span>History</span>
+            </a>
+            <a href="/payment" class="rs-bottom-nav-item" aria-label="Pay">
+                <i class="fas fa-wallet"></i>
+                <span>Pay</span>
+            </a>
+        </div>
+    </nav>
+
+</body>
+</html>

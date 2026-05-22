@@ -1,0 +1,360 @@
+{% extends "admin/_layout.html" %}
+
+{% block page_title %}Settings{% endblock %}
+{% block topbar_title %}Settings{% endblock %}
+
+{% block topbar_extra %}
+<button id="save-settings-btn" class="btn-glow btn-glow-primary d-none d-md-flex align-items-center gap-2"
+    onclick="saveCurrentTab()" style="padding:.4rem 1rem;font-size:.8rem;">
+    <i class="fas fa-floppy-disk"></i> Save Changes
+</button>
+{% endblock %}
+
+{% block main_content %}
+<!-- Page header -->
+<div class="rs-page-header mb-4 animate-fade-in-up">
+    <h2 class="rs-page-title">System <span class="rs-gradient-text">Settings</span></h2>
+    <p class="rs-page-sub">Configure your store, manage security, notifications, and user roles.</p>
+</div>
+
+<!-- ── Settings Tab Navigation ── -->
+<div class="glass-card mb-4 animate-fade-in-up animation-delay-100">
+    <div class="p-3">
+        <div class="rs-tab-nav" id="settings-tabs">
+            <button class="rs-tab-btn active" data-tab="general"      onclick="switchTab('general',this)">
+                <i class="fas fa-store me-1"></i>General
+            </button>
+            <button class="rs-tab-btn"         data-tab="security"    onclick="switchTab('security',this)">
+                <i class="fas fa-shield-halved me-1"></i>Security
+            </button>
+            <button class="rs-tab-btn"         data-tab="notifications" onclick="switchTab('notifications',this)">
+                <i class="fas fa-bell me-1"></i>Notifications
+            </button>
+            <button class="rs-tab-btn"         data-tab="roles"       onclick="switchTab('roles',this)">
+                <i class="fas fa-user-shield me-1"></i>Roles
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Tab: General ── -->
+<div id="tab-general" class="settings-tab animate-fade-in-up animation-delay-200">
+    <div class="row g-4">
+        <div class="col-12 col-lg-7">
+            <div class="glass-card h-100">
+                <div class="card-header-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-primary"><i class="fas fa-store"></i></div>
+                        <h2 class="mb-0">Store Information</h2>
+                    </div>
+                </div>
+                <div class="p-4 d-flex flex-column gap-4">
+                    <div class="rs-field-group">
+                        <label class="rs-field-label">Store Name</label>
+                        <input type="text" class="rs-input" value="RetailScan Superstore" id="store-name">
+                    </div>
+                    <div class="rs-field-group">
+                        <label class="rs-field-label">Store Email</label>
+                        <input type="email" class="rs-input" value="store@retailscan.in" id="store-email">
+                    </div>
+                    <div class="rs-field-group">
+                        <label class="rs-field-label">Store Address</label>
+                        <textarea class="rs-input rs-textarea" id="store-address">12, MG Road, Bengaluru, Karnataka — 560001</textarea>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="rs-field-group">
+                                <label class="rs-field-label">Currency</label>
+                                <select class="rs-select w-100" id="store-currency">
+                                    <option selected>INR (₹)</option>
+                                    <option>USD ($)</option>
+                                    <option>EUR (€)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="rs-field-group">
+                                <label class="rs-field-label">Timezone</label>
+                                <select class="rs-select w-100" id="store-timezone">
+                                    <option selected>Asia/Kolkata (IST)</option>
+                                    <option>UTC</option>
+                                    <option>America/New_York</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rs-field-group">
+                        <label class="rs-field-label">GST Number</label>
+                        <input type="text" class="rs-input" value="29AABCU9603R1ZX" id="store-gst">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-5">
+            <div class="glass-card mb-4">
+                <div class="card-header-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-amber"><i class="fas fa-sliders"></i></div>
+                        <h2 class="mb-0">Checkout Settings</h2>
+                    </div>
+                </div>
+                <div class="p-4 d-flex flex-column gap-4">
+                    <div class="rs-field-group">
+                        <label class="rs-field-label">Initial Wallet Balance (₹)</label>
+                        <input type="number" class="rs-input" value="10000" id="wallet-initial">
+                    </div>
+                    <div class="rs-field-group">
+                        <label class="rs-field-label">Loyalty Points per ₹10</label>
+                        <input type="number" class="rs-input" value="1" id="points-rate">
+                    </div>
+                    <div class="rs-field-group">
+                        <label class="rs-field-label">AI Detection Model</label>
+                        <select class="rs-select w-100">
+                            <option selected>Google Gemini Flash</option>
+                            <option>YOLOv8n (Local)</option>
+                            <option>Gemini Pro Vision</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card">
+                <div class="card-header-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-cyan"><i class="fas fa-circle-info"></i></div>
+                        <h2 class="mb-0">System Info</h2>
+                    </div>
+                </div>
+                <div class="p-4 d-flex flex-column gap-3">
+                    <div class="d-flex justify-content-between">
+                        <span style="color:var(--text-secondary);font-size:.875rem;">App Version</span>
+                        <span class="rs-badge rs-badge-primary">v3.0.0</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span style="color:var(--text-secondary);font-size:.875rem;">Framework</span>
+                        <span class="fw-semibold" style="color:var(--text-primary);font-size:.875rem;">Flask 2.x</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span style="color:var(--text-secondary);font-size:.875rem;">Database</span>
+                        <span class="fw-semibold" style="color:var(--text-primary);font-size:.875rem;">SQLite</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span style="color:var(--text-secondary);font-size:.875rem;">Auth Provider</span>
+                        <span class="fw-semibold" style="color:var(--text-primary);font-size:.875rem;">Firebase</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span style="color:var(--text-secondary);font-size:.875rem;">Build Phase</span>
+                        <span class="rs-badge rs-badge-violet">Phase 3</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Tab: Security ── -->
+<div id="tab-security" class="settings-tab hidden animate-fade-in-up">
+    <div class="row g-4">
+        <div class="col-12 col-lg-6">
+            <div class="glass-card h-100">
+                <div class="card-header-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-danger"><i class="fas fa-lock"></i></div>
+                        <h2 class="mb-0">Change Password</h2>
+                    </div>
+                </div>
+                <div class="p-4 d-flex flex-column gap-4">
+                    <div class="glass-card" style="background:rgba(239,68,68,.04);border-color:rgba(239,68,68,.15);">
+                        <div class="p-3 d-flex gap-3 align-items-start">
+                            <i class="fas fa-circle-info" style="color:#ef4444;margin-top:2px;"></i>
+                            <p class="mb-0" style="color:var(--text-secondary);font-size:.85rem;">
+                                Password changes apply to your admin login. Firebase authentication manages all customer passwords separately.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="rs-field-group">
+                        <label class="rs-field-label">Current Password</label>
+                        <div class="rs-password-wrap">
+                            <input type="password" class="rs-input" id="curr-pass" placeholder="Enter current password">
+                            <button class="rs-pwd-toggle" onclick="togglePwd('curr-pass',this)" type="button">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="rs-field-group">
+                        <label class="rs-field-label">New Password</label>
+                        <div class="rs-password-wrap">
+                            <input type="password" class="rs-input" id="new-pass" placeholder="Min 8 characters">
+                            <button class="rs-pwd-toggle" onclick="togglePwd('new-pass',this)" type="button">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="rs-field-group">
+                        <label class="rs-field-label">Confirm New Password</label>
+                        <input type="password" class="rs-input" id="confirm-pass" placeholder="Repeat new password">
+                    </div>
+                    <button class="btn-glow btn-glow-primary w-100" onclick="handlePasswordChange()">
+                        <i class="fas fa-key me-2"></i> Update Password
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="glass-card mb-4">
+                <div class="card-header-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-primary"><i class="fas fa-shield-halved"></i></div>
+                        <h2 class="mb-0">Two-Factor Auth</h2>
+                    </div>
+                    <span class="rs-badge rs-badge-gray">Recommended</span>
+                </div>
+                <div class="p-4 d-flex flex-column gap-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-0 fw-semibold" style="color:var(--text-primary);">Email OTP on Login</p>
+                            <p class="mb-0" style="color:var(--text-secondary);font-size:.8rem;">Send OTP to admin email on each login</p>
+                        </div>
+                        <label class="rs-toggle"><input type="checkbox" id="2fa-email"><span class="rs-toggle-slider"></span></label>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-0 fw-semibold" style="color:var(--text-primary);">Suspicious Login Alert</p>
+                            <p class="mb-0" style="color:var(--text-secondary);font-size:.8rem;">Alert when login from new device</p>
+                        </div>
+                        <label class="rs-toggle"><input type="checkbox" id="2fa-device" checked><span class="rs-toggle-slider"></span></label>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-0 fw-semibold" style="color:var(--text-primary);">Session Timeout</p>
+                            <p class="mb-0" style="color:var(--text-secondary);font-size:.8rem;">Auto-logout after inactivity</p>
+                        </div>
+                        <label class="rs-toggle"><input type="checkbox" id="session-timeout" checked><span class="rs-toggle-slider"></span></label>
+                    </div>
+                </div>
+            </div>
+            <div class="glass-card">
+                <div class="card-header-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-amber"><i class="fas fa-clock-rotate-left"></i></div>
+                        <h2 class="mb-0">Login History</h2>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div id="login-history-list" class="d-flex flex-column gap-2">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Tab: Notifications ── -->
+<div id="tab-notifications" class="settings-tab hidden animate-fade-in-up">
+    <div class="row g-4">
+        <div class="col-12 col-lg-6">
+            <div class="glass-card h-100">
+                <div class="card-header-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-cyan"><i class="fas fa-envelope"></i></div>
+                        <h2 class="mb-0">Email Notifications</h2>
+                    </div>
+                </div>
+                <div class="p-4 d-flex flex-column gap-4" id="email-notif-list">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="glass-card h-100">
+                <div class="card-header-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-violet"><i class="fas fa-bell"></i></div>
+                        <h2 class="mb-0">In-App Alerts</h2>
+                    </div>
+                </div>
+                <div class="p-4 d-flex flex-column gap-4" id="inapp-notif-list">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Tab: Roles ── -->
+<div id="tab-roles" class="settings-tab hidden animate-fade-in-up">
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="glass-card">
+                <div class="card-header-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-violet"><i class="fas fa-user-shield"></i></div>
+                        <div>
+                            <h2 class="mb-0">Role &amp; Permission Management</h2>
+                            <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">Manage who has admin access to this panel</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4 mb-2">
+                    <div class="row g-3">
+                        <div class="col-6 col-lg-3">
+                            <div class="glass-card" style="background:rgba(99,102,241,.04);">
+                                <div class="p-3 text-center">
+                                    <p id="role-total" class="fw-bold mb-0" style="font-size:1.5rem;color:var(--primary);">—</p>
+                                    <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">Total Users</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="glass-card" style="background:rgba(139,92,246,.04);">
+                                <div class="p-3 text-center">
+                                    <p id="role-admin-count" class="fw-bold mb-0" style="font-size:1.5rem;color:#8b5cf6;">—</p>
+                                    <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">Admins</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="glass-card" style="background:rgba(6,182,212,.04);">
+                                <div class="p-3 text-center">
+                                    <p id="role-cust-count" class="fw-bold mb-0" style="font-size:1.5rem;color:var(--accent);">—</p>
+                                    <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">Customers</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-lg-3">
+                            <div class="glass-card" style="background:rgba(245,158,11,.04);">
+                                <div class="p-3 text-center">
+                                    <p class="fw-bold mb-0" style="font-size:1.5rem;color:var(--warning);">1</p>
+                                    <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">Super Admin</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rs-scroll-x">
+                    <table class="rs-admin-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Current Role</th>
+                                <th>Joined</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="roles-table-body">
+                            <tr><td colspan="5" class="text-center py-4">
+                                <div class="rs-spinner mx-auto"></div>
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/admin-settings.js') }}"></script>
+{% endblock %}

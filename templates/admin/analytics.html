@@ -1,0 +1,309 @@
+{% extends "admin/_layout.html" %}
+
+{% block page_title %}Analytics{% endblock %}
+{% block topbar_title %}Analytics{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block topbar_extra %}
+<div class="rs-topbar-stat d-none d-md-flex">
+    <div class="icon-badge icon-badge-primary" style="width:32px;height:32px;border-radius:9px;">
+        <i class="fas fa-calendar-days" style="font-size:.75rem;"></i>
+    </div>
+    <div>
+        <p class="mb-0" style="font-size:.65rem;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:.04em;">Period</p>
+        <p class="mb-0 fw-bold" style="font-size:.9rem;color:var(--text-primary);">Last 30 Days</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block main_content %}
+<!-- Page header -->
+<div class="rs-page-header mb-4 animate-fade-in-up">
+    <h2 class="rs-page-title">Analytics &amp; <span class="rs-gradient-text">Reports</span></h2>
+    <p class="rs-page-sub">Traffic trends, conversion metrics, and customer engagement insights.</p>
+</div>
+
+<!-- ── Metric KPI Pills ── -->
+<div class="rs-stats-grid mb-4 animate-fade-in-up animation-delay-200">
+    <div class="stats-card">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="icon-badge icon-badge-primary" style="width:44px;height:44px;border-radius:13px;font-size:1rem;"><i class="fas fa-eye"></i></div>
+            <span class="stats-card-delta positive"><i class="fas fa-arrow-trend-up"></i> +22%</span>
+        </div>
+        <p class="stats-card-value">48,291</p>
+        <p class="stats-card-label">Page Views</p>
+    </div>
+    <div class="stats-card">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="icon-badge icon-badge-emerald" style="width:44px;height:44px;border-radius:13px;font-size:1rem;"><i class="fas fa-arrow-pointer"></i></div>
+            <span class="stats-card-delta positive"><i class="fas fa-arrow-trend-up"></i> +4.1%</span>
+        </div>
+        <p class="stats-card-value">68.4%</p>
+        <p class="stats-card-label">Conversion Rate</p>
+    </div>
+    <div class="stats-card">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="icon-badge icon-badge-amber" style="width:44px;height:44px;border-radius:13px;font-size:1rem;"><i class="fas fa-door-open"></i></div>
+            <span class="stats-card-delta negative"><i class="fas fa-arrow-trend-down"></i> -1.2%</span>
+        </div>
+        <p class="stats-card-value">31.6%</p>
+        <p class="stats-card-label">Bounce Rate</p>
+    </div>
+    <div class="stats-card">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="icon-badge icon-badge-cyan" style="width:44px;height:44px;border-radius:13px;font-size:1rem;"><i class="fas fa-clock"></i></div>
+            <span class="stats-card-delta positive"><i class="fas fa-arrow-trend-up"></i> +0:32</span>
+        </div>
+        <p class="stats-card-value">4m 32s</p>
+        <p class="stats-card-label">Avg Session</p>
+    </div>
+</div>
+
+<!-- ── Charts Row 1 ── -->
+<div class="row g-4 mb-4 animate-fade-in-up animation-delay-300">
+    <div class="col-12 col-xl-8">
+        <div class="glass-card h-100">
+            <div class="card-header-bar">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-badge icon-badge-primary"><i class="fas fa-chart-line"></i></div>
+                    <div>
+                        <h2 class="mb-0">Revenue &amp; Orders Trend</h2>
+                        <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">Monthly — last 6 months</p>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <span class="rs-badge rs-badge-primary"><i class="fas fa-circle me-1" style="font-size:.5rem;"></i>Revenue</span>
+                    <span class="rs-badge rs-badge-cyan"><i class="fas fa-circle me-1" style="font-size:.5rem;"></i>Orders</span>
+                </div>
+            </div>
+            <div class="p-4" style="height:260px;"><canvas id="revenue-trend-chart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-12 col-xl-4">
+        <div class="glass-card h-100">
+            <div class="card-header-bar">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-badge icon-badge-amber"><i class="fas fa-chart-pie"></i></div>
+                    <div>
+                        <h2 class="mb-0">Tier Breakdown</h2>
+                        <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">Membership distribution</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4" style="height:260px;"><canvas id="tier-donut-chart"></canvas></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Charts Row 2 ── -->
+<div class="row g-4 mb-4 animate-fade-in-up animation-delay-400">
+    <div class="col-12 col-lg-6">
+        <div class="glass-card h-100">
+            <div class="card-header-bar">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-badge icon-badge-emerald"><i class="fas fa-chart-bar"></i></div>
+                    <div>
+                        <h2 class="mb-0">Daily Orders</h2>
+                        <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">Last 7 days</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4" style="height:220px;"><canvas id="daily-orders-chart"></canvas></div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="glass-card h-100">
+            <div class="card-header-bar">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-badge icon-badge-violet"><i class="fas fa-mobile-screen-button"></i></div>
+                    <h2 class="mb-0">Device Breakdown</h2>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="d-flex flex-column gap-3" id="device-breakdown">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Traffic Sources ── -->
+<div class="glass-card animate-fade-in-up animation-delay-500">
+    <div class="card-header-bar">
+        <div class="d-flex align-items-center gap-3">
+            <div class="icon-badge icon-badge-cyan"><i class="fas fa-globe"></i></div>
+            <div>
+                <h2 class="mb-0">Traffic Sources</h2>
+                <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">Where your customers come from</p>
+            </div>
+        </div>
+    </div>
+    <div class="rs-scroll-x">
+        <table class="rs-admin-table">
+            <thead>
+                <tr>
+                    <th>Source</th>
+                    <th>Sessions</th>
+                    <th>Conversions</th>
+                    <th>Conv. Rate</th>
+                    <th>Avg Order</th>
+                    <th>Share</th>
+                </tr>
+            </thead>
+            <tbody id="traffic-table"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ── Discount Analytics ── -->
+<div class="glass-card mt-4 animate-fade-in-up animation-delay-600">
+    <div class="card-header-bar">
+        <div class="d-flex align-items-center gap-3">
+            <div class="icon-badge icon-badge-emerald"><i class="fas fa-tag"></i></div>
+            <div>
+                <h2 class="mb-0">Discount Analytics</h2>
+                <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">Total savings given to customers</p>
+            </div>
+        </div>
+        <span id="disc-rate-badge" class="rs-badge rs-badge-success">0% avg discount</span>
+    </div>
+    <div class="p-4">
+        <div class="row g-4 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="rounded-3 p-3 text-center" style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);">
+                    <p class="mb-1 rs-text-xs" style="color:var(--text-secondary);">Total Discounts Given</p>
+                    <p id="disc-total" class="mb-0 fw-bold" style="color:#059669;font-size:1.2rem;">₹0</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="rounded-3 p-3 text-center" style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.12);">
+                    <p class="mb-1 rs-text-xs" style="color:var(--text-secondary);">Discounted Orders</p>
+                    <p id="disc-orders" class="mb-0 fw-bold" style="color:var(--primary);font-size:1.2rem;">0</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="rounded-3 p-3 text-center" style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);">
+                    <p class="mb-1 rs-text-xs" style="color:var(--text-secondary);">Gross Revenue</p>
+                    <p id="disc-gross" class="mb-0 fw-bold" style="color:#d97706;font-size:1.2rem;">₹0</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="rounded-3 p-3 text-center" style="background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.15);">
+                    <p class="mb-1 rs-text-xs" style="color:var(--text-secondary);">Net Revenue</p>
+                    <p id="disc-net" class="mb-0 fw-bold" style="color:#0891b2;font-size:1.2rem;">₹0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Discount type breakdown bars -->
+        <h3 class="fw-semibold mb-3" style="font-size:.9rem;color:var(--text-secondary);">Discount Type Breakdown</h3>
+        <div id="disc-type-bars" class="d-flex flex-column gap-3">
+            <div class="shimmer-card"></div>
+            <div class="shimmer-card"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Receipt Analytics ── -->
+<div class="glass-card mt-4 animate-fade-in-up animation-delay-800">
+    <div class="card-header-bar">
+        <div class="d-flex align-items-center gap-3">
+            <div class="icon-badge icon-badge-cyan"><i class="fas fa-receipt"></i></div>
+            <div>
+                <h2 class="mb-0">Receipt Analytics</h2>
+                <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">Basket value, savings, and shopping patterns</p>
+            </div>
+        </div>
+        <span id="receipt-savings-rate" class="rs-badge rs-badge-success">0% avg savings</span>
+    </div>
+    <div class="p-4">
+        <!-- KPI cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="rounded-3 p-3 text-center" style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);">
+                    <p class="mb-1 rs-text-xs" style="color:var(--text-secondary);">Total Orders</p>
+                    <p id="ra-total-orders" class="mb-0 fw-bold" style="color:var(--success);font-size:1.2rem;">0</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="rounded-3 p-3 text-center" style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.12);">
+                    <p class="mb-1 rs-text-xs" style="color:var(--text-secondary);">Avg Basket Value</p>
+                    <p id="ra-avg-basket" class="mb-0 fw-bold" style="color:var(--primary);font-size:1.2rem;">₹0</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="rounded-3 p-3 text-center" style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);">
+                    <p class="mb-1 rs-text-xs" style="color:var(--text-secondary);">Avg Discount / Order</p>
+                    <p id="ra-avg-discount" class="mb-0 fw-bold" style="color:#d97706;font-size:1.2rem;">₹0</p>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="rounded-3 p-3 text-center" style="background:rgba(6,182,212,.06);border:1px solid rgba(6,182,212,.15);">
+                    <p class="mb-1 rs-text-xs" style="color:var(--text-secondary);">Total Savings Given</p>
+                    <p id="ra-total-savings" class="mb-0 fw-bold" style="color:#0891b2;font-size:1.2rem;">₹0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Orders by day of week -->
+        <h3 class="fw-semibold mb-3" style="font-size:.9rem;color:var(--text-secondary);">Orders by Day of Week (Last 90 Days)</h3>
+        <div id="ra-day-bars" class="d-flex gap-3 align-items-end justify-content-between"
+             style="height:80px;margin-bottom:4px;">
+            <div class="shimmer-card" style="flex:1;height:60px;"></div>
+            <div class="shimmer-card" style="flex:1;height:40px;"></div>
+        </div>
+        <div id="ra-day-labels" class="d-flex gap-3 justify-content-between"></div>
+    </div>
+</div>
+
+<!-- ── Recommendation Analytics ── -->
+<div class="glass-card mt-4 animate-fade-in-up animation-delay-700">
+    <div class="card-header-bar">
+        <div class="d-flex align-items-center gap-3">
+            <div class="icon-badge icon-badge-violet"><i class="fas fa-wand-magic-sparkles"></i></div>
+            <div>
+                <h2 class="mb-0">Recommendation Analytics</h2>
+                <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">Co-purchase patterns &amp; trending products</p>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+            <span class="rs-badge rs-badge-primary" id="rec-basket-badge">Avg basket: — items</span>
+            <span class="rs-badge rs-badge-violet" id="rec-basket-count">0 baskets</span>
+        </div>
+    </div>
+    <div class="p-4">
+        <div class="row g-4">
+            <!-- Top Products -->
+            <div class="col-12 col-lg-6">
+                <h3 class="fw-semibold mb-3" style="font-size:.88rem;color:var(--text-secondary);">
+                    <i class="fas fa-trophy me-1" style="color:var(--warning);"></i> Top Purchased Products
+                </h3>
+                <div id="rec-top-products">
+                    <div class="shimmer-card mb-2"></div>
+                    <div class="shimmer-card mb-2"></div>
+                    <div class="shimmer-card"></div>
+                </div>
+            </div>
+            <!-- Top Pairs -->
+            <div class="col-12 col-lg-6">
+                <h3 class="fw-semibold mb-3" style="font-size:.88rem;color:var(--text-secondary);">
+                    <i class="fas fa-link me-1" style="color:var(--primary);"></i> Frequently Bought Together
+                </h3>
+                <div id="rec-top-pairs">
+                    <div class="shimmer-card mb-2"></div>
+                    <div class="shimmer-card mb-2"></div>
+                    <div class="shimmer-card"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/admin-analytics.js') }}"></script>
+{% endblock %}

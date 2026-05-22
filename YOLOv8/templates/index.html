@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLOv8 Object Detection</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>YOLOv8 Object Detection</h1>
+
+        <div class="controls">
+            <button id="startBtn" onclick="startCamera()">Start Camera</button>
+            <button id="stopBtn" onclick="stopCamera()" disabled>Stop Camera</button>
+            <button id="captureBtn" onclick="captureImage()" disabled>Capture &amp; Detect</button>
+        </div>
+
+        <div class="feed-section">
+            <h2>Live Camera Feed</h2>
+            <div class="video-wrapper">
+                <img id="videoFeed" src="" alt="Camera feed will appear here">
+                <p id="feedPlaceholder">Camera is stopped. Click "Start Camera" to begin.</p>
+            </div>
+        </div>
+
+        <div id="resultSection" class="result-section" style="display:none;">
+            <h2>Captured Detection Result</h2>
+            <img id="capturedImage" src="" alt="Captured image">
+            <div id="detectionList" class="detection-list"></div>
+        </div>
+    </div>
+
+    <script>
+        const videoFeed = document.getElementById('videoFeed');
+        const placeholder = document.getElementById('feedPlaceholder');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const captureBtn = document.getElementById('captureBtn');
+        const resultSection = document.getElementById('resultSection');
+        const capturedImage = document.getElementById('capturedImage');
+        const detectionList = document.getElementById('detectionList');
+
+        function startCamera() {
+            fetch('/camera/start', { method: 'POST' })
+                .then(res => res.json())
+                .then(() => {
+                    videoFeed.src = '/video_feed?' + Date.now();
+                    videoFeed.style.display = 'block';
+                    placeholder.style.display = 'none';
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    captureBtn.disabled = false;
+                });
+        }
+
+        function stopCamera() {
+            fetch('/camera/stop', { method: 'POST' })
+                .then(res => res.json())
+                .then(() => {
+                    videoFeed.src = '';
+                    videoFeed.style.display = 'none';
+                    placeholder.style.display = 'block';
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    captureBtn.disabled = true;
+                });
+        }
+
+        function captureImage() {
+            captureBtn.disabled = true;
+            captureBtn.textContent = 'Detecting...';
+
+            fetch('/capture', { method: 'POST' })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('Error: ' + data.error);
+                        return;
+                    }
+                    capturedImage.src = data.image_url + '?' + Date.now();
+                    resultSection.style.display = 'block';
+
+                    detectionList.innerHTML = '';
+                    if (data.detections.length === 0) {
+                        detectionList.innerHTML = '<p class="no-detect">No objects detected.</p>';
+                    } else {
+                        const table = document.createElement('table');
+                        table.innerHTML = `
+                            <thead>
+                                <tr><th>#</th><th>Object</th><th>Confidence</th></tr>
+                            </thead>
+                            <tbody></tbody>
+                        `;
+                        const tbody = table.querySelector('tbody');
+                        data.detections.forEach((d, i) => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${i + 1}</td>
+                                <td>${d.label}</td>
+                                <td>${(d.confidence * 100).toFixed(1)}%</td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                        detectionList.appendChild(table);
+                    }
+                })
+                .catch(err => alert('Capture failed: ' + err))
+                .finally(() => {
+                    captureBtn.disabled = false;
+                    captureBtn.textContent = 'Capture & Detect';
+                });
+        }
+    </script>
+</body>
+</html>

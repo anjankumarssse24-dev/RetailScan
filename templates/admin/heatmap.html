@@ -1,0 +1,423 @@
+{% extends "admin/_layout.html" %}
+
+{% block page_title %}Heatmap Analytics{% endblock %}
+{% block topbar_title %}Store Heatmap{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Store layout grid ──────────────────────────────────── */
+.store-grid {
+    display: grid;
+    grid-template-areas:
+        "essentials checkout dairy"
+        "snacks     offers   beverages"
+        "entrance   entrance entrance";
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 0.55fr;
+    width: 600px;
+    height: 460px;
+    flex-shrink: 0;
+}
+.zone-cell {
+    border: 1.5px solid rgba(255,255,255,.55);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    position: relative;
+    transition: filter .2s;
+    user-select: none;
+    cursor: default;
+}
+.zone-cell.entrance { grid-area: entrance; }
+.zone-cell.checkout  { grid-area: checkout; }
+.zone-cell.snacks    { grid-area: snacks; }
+.zone-cell.beverages { grid-area: beverages; }
+.zone-cell.essentials{ grid-area: essentials; }
+.zone-cell.dairy     { grid-area: dairy; }
+.zone-cell.offers    { grid-area: offers; }
+.zone-icon {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem; background: rgba(255,255,255,.18);
+}
+.zone-name {
+    font-size: .68rem; font-weight: 700; color: #fff;
+    text-align: center; letter-spacing: .4px;
+    text-shadow: 0 1px 3px rgba(0,0,0,.4);
+    line-height: 1.2;
+}
+.zone-count-badge {
+    position: absolute; top: 4px; right: 6px;
+    font-size: .58rem; font-weight: 700;
+    background: rgba(0,0,0,.35);
+    color: #fff; border-radius: 8px;
+    padding: 1px 6px; letter-spacing: .3px;
+}
+/* Heatmap canvas wrapper */
+.heatmap-wrapper {
+    position: relative;
+    width: 600px; height: 460px;
+    flex-shrink: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(99,102,241,.18);
+}
+.heatmap-canvas-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 600px; height: 460px;
+    pointer-events: none;
+    z-index: 2;
+}
+/* Zone highlight pulse when live */
+.zone-cell.zone-active {
+    animation: zone-pulse .6s ease-in-out;
+}
+@keyframes zone-pulse {
+    0%   { filter: brightness(1); }
+    50%  { filter: brightness(1.35) saturate(1.3); }
+    100% { filter: brightness(1); }
+}
+/* Scroll wrapper for mobile */
+.heatmap-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+/* Zone analytics cards */
+.zone-analytics-bar {
+    height: 6px; border-radius: 6px;
+    background: rgba(99,102,241,.1);
+    overflow: hidden; margin-top: 4px;
+}
+.zone-analytics-fill {
+    height: 100%; border-radius: 6px;
+    transition: width .6s ease;
+}
+/* Insight row */
+.heatmap-insight-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 14px;
+    background: rgba(99,102,241,.04);
+    border: 1px solid rgba(99,102,241,.1);
+    border-radius: 12px;
+    font-size: .82rem; color: var(--text-primary); line-height: 1.4;
+}
+/* Live badge */
+.live-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 20px;
+    background: rgba(239,68,68,.12); color: #dc2626;
+    border: 1px solid rgba(239,68,68,.3);
+    font-size: .72rem; font-weight: 700;
+}
+.live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #dc2626;
+    animation: live-blink 1s ease-in-out infinite;
+}
+@keyframes live-blink {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%       { opacity: .4; transform: scale(.7); }
+}
+/* Filter buttons */
+.hm-filter-btn {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 1.5px solid rgba(99,102,241,.2);
+    background: rgba(255,255,255,.5);
+    color: var(--text-secondary);
+    font-size: .78rem; font-weight: 600;
+    cursor: pointer; transition: all .15s;
+    white-space: nowrap;
+}
+.hm-filter-btn:hover { border-color: var(--primary); color: var(--primary); }
+.hm-filter-btn.active {
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-color: transparent; color: #fff;
+    box-shadow: 0 3px 10px rgba(99,102,241,.3);
+}
+/* Hourly chart */
+.hourly-chart-wrap {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 72px;
+    padding-bottom: 2px;
+}
+.hourly-bar-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+}
+.hourly-bar {
+    width: 100%;
+    border-radius: 3px 3px 0 0;
+    min-height: 3px;
+    transition: height .4s ease;
+    background: linear-gradient(180deg, var(--primary), var(--secondary));
+    opacity: .75;
+}
+.hourly-bar.peak { opacity: 1; background: linear-gradient(180deg, #ef4444, #dc2626); }
+.hourly-bar-lbl {
+    font-size: .52rem; color: var(--text-secondary); font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: clip;
+}
+</style>
+{% endblock %}
+
+{% block topbar_extra %}
+<!-- Live sim badge (hidden initially) -->
+<div id="live-badge-wrap" class="hidden">
+    <div class="live-badge">
+        <div class="live-dot"></div>
+        LIVE SIMULATION
+    </div>
+</div>
+{% endblock %}
+
+{% block main_content %}
+<div class="container-fluid px-0">
+
+    <!-- Page header + filters -->
+    <div class="glass-card mb-4 animate-fade-in-up">
+        <div class="card-header-bar flex-wrap gap-3">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-badge icon-badge-violet"><i class="fas fa-fire"></i></div>
+                <div>
+                    <h2 class="mb-0">Store Heatmap</h2>
+                    <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">
+                        Customer activity zones &amp; shelf engagement
+                    </p>
+                </div>
+            </div>
+            <!-- Filters + Live Sim -->
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <button class="hm-filter-btn active" data-filter="week"    onclick="setFilter('week',    this)">This Week</button>
+                <button class="hm-filter-btn"         data-filter="today"   onclick="setFilter('today',   this)">Today</button>
+                <button class="hm-filter-btn"         data-filter="month"   onclick="setFilter('month',   this)">This Month</button>
+                <button class="hm-filter-btn"         data-filter="all"     onclick="setFilter('all',     this)">All Time</button>
+                <div style="width:1px;height:24px;background:rgba(99,102,241,.15);"></div>
+                <button id="btn-live-sim" class="hm-filter-btn"
+                        style="border-color:rgba(239,68,68,.3);color:#dc2626;"
+                        onclick="toggleLiveSim()">
+                    <i class="fas fa-play me-1"></i>Live Sim
+                </button>
+                <!-- Category filter -->
+                <select id="cat-filter" class="hm-filter-btn" onchange="setCategoryFilter(this.value)"
+                        style="padding-right:24px;appearance:auto;">
+                    <option value="">All Categories</option>
+                    <option value="snacks">Snacks</option>
+                    <option value="beverages">Beverages</option>
+                    <option value="dairy">Dairy</option>
+                    <option value="grocery">Grocery</option>
+                    <option value="personal care">Personal Care</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- KPI cards row -->
+        <div class="p-4 pt-0">
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="rounded-3 p-3 text-center" style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.15);">
+                        <p class="mb-1 rs-text-xs" style="color:var(--text-secondary);">Most Active Zone</p>
+                        <p id="kpi-top-zone" class="mb-0 fw-bold" style="color:#dc2626;font-size:.95rem;">—</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="rounded-3 p-3 text-center" style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);">
+                        <p class="mb-1 rs-text-xs" style="color:var(--text-secondary);">Peak Activity Hour</p>
+                        <p id="kpi-peak-hour" class="mb-0 fw-bold" style="color:#d97706;font-size:.95rem;">—</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="rounded-3 p-3 text-center" style="background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.12);">
+                        <p class="mb-1 rs-text-xs" style="color:var(--text-secondary);">Total Activity</p>
+                        <p id="kpi-total" class="mb-0 fw-bold" style="color:var(--primary);font-size:.95rem;">—</p>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="rounded-3 p-3 text-center" style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.15);">
+                        <p class="mb-1 rs-text-xs" style="color:var(--text-secondary);">Checkouts</p>
+                        <p id="kpi-checkout" class="mb-0 fw-bold" style="color:var(--success);font-size:.95rem;">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main two-column: Heatmap + Zone breakdown -->
+    <div class="row g-4 mb-4">
+
+        <!-- LEFT: Heatmap canvas -->
+        <div class="col-12 col-xl-8 animate-fade-in-up animation-delay-200">
+            <div class="glass-card">
+                <div class="card-header-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-amber"><i class="fas fa-map-location-dot"></i></div>
+                        <h2 class="mb-0">Store Floor Plan</h2>
+                    </div>
+                    <div class="d-flex gap-2 align-items-center">
+                        <div id="baseline-badge" class="hidden rs-badge" style="background:rgba(245,158,11,.1);color:#d97706;border:1px solid rgba(245,158,11,.2);font-size:.65rem;">
+                            <i class="fas fa-wand-magic-sparkles me-1"></i>Simulated data
+                        </div>
+                        <span class="rs-badge rs-badge-violet" style="font-size:.65rem;">
+                            <i class="fas fa-expand me-1"></i>600 × 460
+                        </span>
+                    </div>
+                </div>
+                <div class="p-4 pt-0">
+                    <div class="heatmap-scroll">
+                        <div class="heatmap-wrapper" id="heatmap-wrapper">
+                            <!-- Zone grid (behind heatmap canvas) -->
+                            <div class="store-grid" id="store-grid">
+                                <div class="zone-cell essentials" style="background:rgba(139,92,246,.22);">
+                                    <div class="zone-icon"><i class="fas fa-basket-shopping" style="color:#c4b5fd;"></i></div>
+                                    <span class="zone-name">Essentials</span>
+                                    <span class="zone-count-badge" id="zbadge-essentials">0</span>
+                                </div>
+                                <div class="zone-cell checkout" style="background:rgba(16,185,129,.22);">
+                                    <div class="zone-icon"><i class="fas fa-cash-register" style="color:#6ee7b7;"></i></div>
+                                    <span class="zone-name">Checkout</span>
+                                    <span class="zone-count-badge" id="zbadge-checkout">0</span>
+                                </div>
+                                <div class="zone-cell dairy" style="background:rgba(236,72,153,.22);">
+                                    <div class="zone-icon"><i class="fas fa-egg" style="color:#f9a8d4;"></i></div>
+                                    <span class="zone-name">Dairy &amp; Fresh</span>
+                                    <span class="zone-count-badge" id="zbadge-dairy">0</span>
+                                </div>
+                                <div class="zone-cell snacks" style="background:rgba(245,158,11,.22);">
+                                    <div class="zone-icon"><i class="fas fa-cookie-bite" style="color:#fde68a;"></i></div>
+                                    <span class="zone-name">Snacks Shelf</span>
+                                    <span class="zone-count-badge" id="zbadge-snacks">0</span>
+                                </div>
+                                <div class="zone-cell offers" style="background:rgba(239,68,68,.22);">
+                                    <div class="zone-icon"><i class="fas fa-tags" style="color:#fca5a5;"></i></div>
+                                    <span class="zone-name">Offers Zone</span>
+                                    <span class="zone-count-badge" id="zbadge-offers">0</span>
+                                </div>
+                                <div class="zone-cell beverages" style="background:rgba(59,130,246,.22);">
+                                    <div class="zone-icon"><i class="fas fa-bottle-water" style="color:#93c5fd;"></i></div>
+                                    <span class="zone-name">Beverages</span>
+                                    <span class="zone-count-badge" id="zbadge-beverages">0</span>
+                                </div>
+                                <div class="zone-cell entrance" style="background:rgba(6,182,212,.22);">
+                                    <div class="zone-icon"><i class="fas fa-door-open" style="color:#67e8f9;"></i></div>
+                                    <span class="zone-name">Entrance</span>
+                                    <span class="zone-count-badge" id="zbadge-entrance">0</span>
+                                </div>
+                            </div>
+                            <!-- heatmap.js renders its canvas here -->
+                            <div id="heatmap-container" class="heatmap-canvas-overlay"></div>
+                        </div>
+                    </div>
+                    <!-- Legend -->
+                    <div class="d-flex align-items-center justify-content-center gap-3 mt-3">
+                        <span class="rs-text-xs" style="color:var(--text-secondary);">Low</span>
+                        <div style="width:140px;height:10px;border-radius:6px;
+                                    background:linear-gradient(90deg,#3b82f6,#10b981,#f59e0b,#ef4444);"></div>
+                        <span class="rs-text-xs" style="color:var(--text-secondary);">High</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Zone breakdown + hourly chart -->
+        <div class="col-12 col-xl-4 animate-fade-in-up animation-delay-400">
+
+            <!-- Zone breakdown card -->
+            <div class="glass-card mb-4">
+                <div class="card-header-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-cyan"><i class="fas fa-chart-bar"></i></div>
+                        <h2 class="mb-0">Zone Activity</h2>
+                    </div>
+                </div>
+                <div class="px-4 pb-4">
+                    <div id="zone-breakdown-list" class="d-flex flex-column gap-3">
+                        <div class="shimmer-card"></div>
+                        <div class="shimmer-card"></div>
+                        <div class="shimmer-card"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hourly activity chart -->
+            <div class="glass-card">
+                <div class="card-header-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-amber"><i class="fas fa-clock"></i></div>
+                        <h2 class="mb-0">Hourly Activity</h2>
+                    </div>
+                    <span id="peak-hour-badge" class="rs-badge rs-badge-danger" style="font-size:.65rem;"></span>
+                </div>
+                <div class="px-4 pb-4">
+                    <div id="hourly-chart" class="hourly-chart-wrap"></div>
+                    <div id="hourly-labels" class="d-flex gap-1 mt-1" style="font-size:.5rem;color:var(--text-secondary);"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom row: Insights + Zone comparison -->
+    <div class="row g-4">
+
+        <!-- Smart Insights -->
+        <div class="col-12 col-md-6 animate-fade-in-up animation-delay-500">
+            <div class="glass-card" style="height:100%;">
+                <div class="card-header-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-violet"><i class="fas fa-lightbulb"></i></div>
+                        <h2 class="mb-0">Heatmap Insights</h2>
+                    </div>
+                    <span class="rs-badge rs-badge-violet" style="font-size:.65rem;">AI-Generated</span>
+                </div>
+                <div id="insights-list" class="px-4 pb-4 d-flex flex-column gap-2">
+                    <div class="shimmer-card"></div>
+                    <div class="shimmer-card"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zone comparison table -->
+        <div class="col-12 col-md-6 animate-fade-in-up animation-delay-600">
+            <div class="glass-card" style="height:100%;">
+                <div class="card-header-bar">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="icon-badge icon-badge-emerald"><i class="fas fa-table-cells"></i></div>
+                        <h2 class="mb-0">Zone Comparison</h2>
+                    </div>
+                </div>
+                <div class="px-4 pb-4">
+                    <table class="w-100" style="font-size:.82rem;border-collapse:collapse;">
+                        <thead>
+                            <tr style="border-bottom:2px solid rgba(99,102,241,.1);">
+                                <th class="py-2 fw-semibold" style="color:var(--text-secondary);">Zone</th>
+                                <th class="py-2 fw-semibold text-end" style="color:var(--text-secondary);">Activity</th>
+                                <th class="py-2 fw-semibold text-end" style="color:var(--text-secondary);">Share</th>
+                                <th class="py-2 fw-semibold text-end" style="color:var(--text-secondary);">Rank</th>
+                            </tr>
+                        </thead>
+                        <tbody id="zone-table-body">
+                            <tr><td colspan="4" class="py-3 text-center" style="color:var(--text-secondary);">
+                                <div class="shimmer-card"></div>
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %} {# main_content #}
+
+{% block page_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/heatmap.js@2.0.5/heatmap.min.js"></script>
+<script src="{{ url_for('static', filename='js/admin-heatmap.js') }}"></script>
+{% endblock %}

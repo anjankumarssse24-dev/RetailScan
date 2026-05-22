@@ -1,0 +1,9 @@
+flask
+gunicorn
+opencv-python-headless
+requests
+google-generativeai
+Pillow
+PyJWT
+cryptography
+python-dotenv

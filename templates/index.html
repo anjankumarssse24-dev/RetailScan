@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Retail Checkout — RetailScan</title>
+    <!-- Tailwind FIRST (Preflight disabled) so Bootstrap wins the cascade -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>tailwind.config={corePlugins:{preflight:false},theme:{extend:{colors:{primary:{DEFAULT:'#6366f1',dark:'#4f46e5',light:'#e0e7ff'},secondary:'#8b5cf6',accent:'#06b6d4'}}}}</script>
+    <!-- Bootstrap 5 AFTER Tailwind -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/components.css') }}">
+    <!-- PWA -->
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="RetailScan">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/icon-96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/icons/icon-72.png">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="RetailScan">
+    <meta name="msapplication-TileColor" content="#6366f1">
+    <meta name="msapplication-TileImage" content="/static/icons/icon-144.png">
+<body>
+    <div class="fixed inset-0 overflow-hidden pointer-events-none" style="z-index:-1;">
+        <div class="particle particle-1"></div><div class="particle particle-2"></div>
+        <div class="particle particle-3"></div><div class="particle particle-4"></div>
+        <div class="particle particle-5"></div>
+    </div>
+
+    <!-- ████ RESPONSIVE NAVBAR ████ -->
+    <nav class="navbar navbar-expand-md glass-nav sticky-top" style="z-index:1050;">
+        <div class="container-xl px-3 px-sm-4">
+
+            <!-- Brand (always visible) -->
+            <a class="navbar-brand d-flex align-items-center gap-2 text-decoration-none py-2" href="/">
+                <div class="nav-brand-icon"><i class="fas fa-bolt text-white"></i></div>
+                <span class="nav-brand-text">RetailScan</span>
+            </a>
+
+            <!-- Mobile: quick-cart badge + animated hamburger -->
+            <div class="d-flex align-items-center gap-2 d-md-none">
+                <a href="/cart" class="position-relative p-1 text-decoration-none" style="color:var(--text-secondary);">
+                    <i class="fas fa-bag-shopping fa-lg"></i>
+                    <span id="nav-cart-count-mob" class="cart-badge nav-cart-badge position-absolute"
+                          style="top:-4px;right:-6px;font-size:.58rem;padding:1px 5px;min-width:16px;">0</span>
+                </a>
+                <button class="rs-toggler" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#navbarMain"
+                        aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="rs-bar"></span>
+                    <span class="rs-bar"></span>
+                    <span class="rs-bar"></span>
+                </button>
+            </div>
+
+            <!-- Collapsible panel -->
+            <div class="collapse navbar-collapse" id="navbarMain" style="visibility:visible;">
+
+                <!-- Nav links: stacked on mobile, row on desktop -->
+                <div class="d-flex flex-column flex-md-row align-items-stretch align-items-md-center
+                            ms-md-auto gap-1 pt-2 pt-md-0 pb-2 pb-md-0 px-1 px-md-0">
+                    <a href="/" class="rs-nav-link active"><i class="fas fa-crosshairs"></i> Scanner</a>
+                    <a href="/cart" class="rs-nav-link"><i class="fas fa-bag-shopping"></i> Cart
+                        <span id="nav-cart-count" class="cart-badge nav-cart-badge ms-1">0</span></a>
+                    <a href="/history" class="rs-nav-link"><i class="fas fa-clock-rotate-left"></i> History</a>
+                    <a href="/payment" class="rs-nav-link"><i class="fas fa-wallet"></i> Pay</a>
+                    <a href="/offers" class="rs-nav-link"><i class="fas fa-tag"></i> Offers</a>
+                </div>
+
+                <!-- Mobile only: user info + logout -->
+                <div class="rs-mobile-user d-md-none">
+                    <div class="rs-mobile-user-info">
+                        <div id="user-avatar-mob" class="nav-user-avatar flex-shrink-0">
+                            <span id="avatar-initials-mob"></span>
+                        </div>
+                        <div style="min-width:0;">
+                            <p id="dropdown-name-mob"  class="mb-0 fw-semibold text-truncate" style="color:var(--text-primary);font-size:.9rem;"></p>
+                            <p id="dropdown-email-mob" class="mb-0 text-truncate"              style="color:var(--text-secondary);font-size:.78rem;"></p>
+                            <div class="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                                <span id="dropdown-tier-badge-mob"></span>
+                                <span id="dropdown-reward-points-mob"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="handleLogout()" class="rs-logout-btn">
+                        <i class="fas fa-arrow-right-from-bracket"></i> Logout
+                    </button>
+                </div>
+
+                <!-- Desktop only: user avatar + dropdown -->
+                <div class="d-none d-md-flex align-items-center ms-2 position-relative">
+                    <div id="user-avatar" class="nav-user-avatar" onclick="toggleUserDropdown()" title="Account">
+                        <span id="avatar-initials"></span>
+                    </div>
+                    <div id="user-dropdown" class="user-dropdown">
+                        <div class="px-4 py-3" style="border-bottom:1px solid rgba(99,102,241,.1);">
+                            <p id="dropdown-name"  class="mb-0 fw-semibold" style="color:var(--text-primary);font-size:.875rem;"></p>
+                            <p id="dropdown-email" class="mb-0 mt-1"        style="color:var(--text-secondary);font-size:.78rem;"></p>
+                            <div class="d-flex align-items-center gap-2 mt-2 flex-wrap">
+                                <span id="dropdown-tier-badge"></span>
+                                <span id="dropdown-reward-points"></span>
+                            </div>
+                        </div>
+                        <div class="p-1">
+                            <a href="/profile" class="user-dropdown-item">
+                                <i class="fas fa-user-circle"></i><span>My Profile</span>
+                            </a>
+                            <button onclick="handleLogout()" class="user-dropdown-item danger w-100">
+                                <i class="fas fa-arrow-right-from-bracket"></i><span>Logout</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /collapse -->
+        </div>
+    </nav>
+
+    <main class="py-4 py-lg-5 rs-page-main" style="position:relative;z-index:1;">
+        <div class="container-xl px-3 px-sm-4">
+
+            <div class="mb-4 animate-fade-in-up">
+                <h1 class="fw-bold mb-1" style="font-size:clamp(1.5rem,4vw,2.2rem);color:var(--text-primary);">
+                    Smart Checkout
+                    <span style="background:linear-gradient(135deg,#6366f1,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Scanner</span>
+                </h1>
+                <p class="mb-0" style="color:var(--text-secondary);font-size:.9rem;">Capture a product image to instantly detect and add items to your cart.</p>
+            </div>
+
+            <div class="row g-4">
+
+                <!-- ── Camera ── -->
+                <div class="col-12 col-lg-6">
+                    <div class="glass-card animate-fade-in-up overflow-hidden h-100">
+                        <div class="card-header-bar">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-badge icon-badge-cyan"><i class="fas fa-video"></i></div>
+                                <h2 class="mb-0">Live Camera Feed</h2>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <button id="btn-fullscreen-scan" class="d-md-none hm-filter-btn"
+                                        style="padding:5px 12px;font-size:.72rem;"
+                                        onclick="openFullscreenScan()" title="Fullscreen scan">
+                                    <i class="fas fa-expand me-1"></i>Fullscreen
+                                </button>
+                                <span id="camera-status" class="status-pill offline">
+                                    <span class="status-dot"></span>OFFLINE
+                                </span>
+                            </div>
+                        </div>
+                        <div class="camera-wrapper" style="min-height:280px;" id="camera-container">
+                            <img id="camera-feed" class="hidden w-100" alt="Camera Feed"
+                                 style="max-height:400px;object-fit:cover;border-radius:0;"
+                                 id="camera-stream">
+                            <div id="camera-placeholder" class="d-flex flex-column align-items-center justify-content-center gap-3" style="min-height:280px;">
+                                <div class="icon-badge icon-badge-violet" style="width:68px;height:68px;border-radius:18px;font-size:1.8rem;">
+                                    <i class="fas fa-video-slash"></i>
+                                </div>
+                                <p class="mb-0" style="color:var(--text-secondary);font-size:.9rem;">
+                                    Click <strong style="color:var(--primary);">Start Camera</strong> to begin scanning
+                                </p>
+                            </div>
+                            <div id="scan-line" class="scan-line hidden"></div>
+                            <div id="overlay-label" class="position-absolute bottom-0 start-0 m-3 px-3 py-2 rounded-3 text-white fw-bold hidden"
+                                 style="background:linear-gradient(135deg,var(--primary),var(--secondary));font-size:.85rem;"></div>
+                        </div>
+                        <div class="p-4 d-flex flex-wrap gap-2 justify-content-center border-top" style="border-color:rgba(99,102,241,.08)!important;">
+                            <button id="btn-start-camera" class="btn-glow" style="background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 4px 14px rgba(16,185,129,.35);">
+                                <i class="fas fa-play"></i> <span class="d-none d-sm-inline">Start</span><span class="d-sm-none">Start</span>
+                            </button>
+                            <button id="btn-stop-camera" class="btn-glow" style="background:linear-gradient(135deg,#ef4444,#dc2626);" disabled>
+                                <i class="fas fa-stop"></i> <span class="d-none d-sm-inline">Stop</span><span class="d-sm-none">Stop</span>
+                            </button>
+                            <!-- Mobile: big circular capture button -->
+                            <button id="btn-capture" class="btn-glow-primary d-none d-sm-inline-flex"
+                                    style="background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 4px 14px rgba(99,102,241,.4);" disabled>
+                                <i class="fas fa-camera"></i> Capture &amp; Detect
+                            </button>
+                            <button id="btn-capture-mob" class="d-sm-none btn-glow-primary"
+                                    style="width:68px;height:68px;border-radius:50%;padding:0;font-size:1.5rem;
+                                           background:linear-gradient(135deg,#6366f1,#8b5cf6);
+                                           box-shadow:0 8px 28px rgba(99,102,241,.5);border:3px solid rgba(255,255,255,.6);" disabled>
+                                <i class="fas fa-camera"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Detection Result ── -->
+                <div class="col-12 col-lg-6">
+                    <div class="glass-card animate-fade-in-up animation-delay-200 overflow-hidden h-100">
+                        <div class="card-header-bar">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="icon-badge icon-badge-violet"><i class="fas fa-wand-magic-sparkles"></i></div>
+                                <h2 class="mb-0">Detection Result</h2>
+                            </div>
+                        </div>
+                        <div id="result-area" class="p-4 d-flex align-items-center justify-content-center" style="min-height:280px;">
+                            <div class="text-center">
+                                <div class="icon-badge icon-badge-primary mx-auto mb-3" style="width:68px;height:68px;border-radius:18px;font-size:1.8rem;">
+                                    <i class="fas fa-crosshairs"></i>
+                                </div>
+                                <p class="fw-semibold mb-1" style="color:var(--text-primary);">No items detected yet</p>
+                                <p class="mb-0" style="color:var(--text-secondary);font-size:.85rem;">Capture an image above to start detecting products</p>
+                            </div>
+                        </div>
+                        <!-- Post-Scan Suggestions -->
+                        <div id="scan-suggestions" class="hidden px-4 pb-4 animate-fade-in-up">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span style="font-size:.75rem;font-weight:700;color:var(--text-secondary);">ALSO CONSIDER</span>
+                                <div style="flex:1;height:1px;background:rgba(99,102,241,.12);"></div>
+                            </div>
+                            <div id="scan-suggestions-strip" class="scan-rec-strip"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div><!-- /row -->
+        </div>
+    </main>
+
+    <!-- Analysis Overlay -->
+    <div id="loading-overlay" class="position-fixed top-0 start-0 w-100 h-100 d-none align-items-center justify-content-center"
+         style="z-index:2000;background:rgba(240,249,255,.78);backdrop-filter:blur(16px);">
+        <div class="glass-card p-5 text-center animate-scale-in" style="max-width:340px;width:90%;">
+            <div class="scan-animation mx-auto mb-4">
+                <div class="scan-ring-outer"></div>
+                <div class="scan-ring-inner"></div>
+                <div class="scan-ring-pulse"></div>
+                <i class="fas fa-barcode fa-2x absolute-center animate-icon-pulse" style="color:var(--primary);z-index:10;"></i>
+            </div>
+            <p id="analysis-status" class="fw-bold fs-5 mb-3" style="color:var(--primary);">Scanning product…</p>
+            <div class="d-flex gap-2 justify-content-center">
+                <span class="loading-dot"></span>
+                <span class="loading-dot delay-1"></span>
+                <span class="loading-dot delay-2"></span>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/loader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/toast.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/nav-user.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}"></script>
+    <script src="/static/js/confetti.js"></script>
+    <script src="/static/js/shortcuts.js"></script>
+    <!-- ████ MOBILE BOTTOM NAV (hidden on md+) ████ -->
+    <!-- Footer -->
+    <footer class="rs-footer no-lift">
+        <div class="rs-footer-brand"><i class="fas fa-bolt me-1"></i>RetailScan <span style="opacity:.6;font-weight:500;">v2.0</span></div>
+        <div class="rs-footer-sub">AI-Powered Smart Retail Checkout Platform &nbsp;·&nbsp; Press <kbd style="font-size:.65rem;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2);border-radius:4px;padding:1px 5px;color:var(--primary);">Shift+?</kbd> for shortcuts</div>
+    </footer>
+
+    <nav class="rs-bottom-nav" aria-label="Bottom navigation">
+        <div class="rs-bottom-nav-inner">
+            <a href="/" class="rs-bottom-nav-item active" aria-label="Scanner">
+                <i class="fas fa-crosshairs"></i>
+                <span>Scan</span>
+            </a>
+            <a href="/cart" class="rs-bottom-nav-item" aria-label="Cart" style="position:relative;">
+                <i class="fas fa-bag-shopping"></i>
+                <span class="rs-bottom-nav-badge nav-cart-badge">0</span>
+                <span>Cart</span>
+            </a>
+            <a href="/history" class="rs-bottom-nav-item" aria-label="History">
+                <i class="fas fa-clock-rotate-left"></i>
+                <span>History</span>
+            </a>
+            <a href="/payment" class="rs-bottom-nav-item" aria-label="Pay">
+                <i class="fas fa-wallet"></i>
+                <span>Pay</span>
+            </a>
+        </div>
+    </nav>
+
+</body>
+</html>

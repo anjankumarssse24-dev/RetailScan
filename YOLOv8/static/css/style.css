@@ -1,0 +1,135 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #1a1a2e;
+    color: #e0e0e0;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 30px 20px;
+}
+
+h1 {
+    text-align: center;
+    margin-bottom: 25px;
+    color: #00d2ff;
+    font-size: 1.8rem;
+}
+
+h2 {
+    margin-bottom: 12px;
+    color: #ccc;
+    font-size: 1.1rem;
+}
+
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 25px;
+}
+
+button {
+    padding: 10px 22px;
+    font-size: 0.95rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s, opacity 0.2s;
+}
+
+button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+#startBtn {
+    background: #00c853;
+    color: #fff;
+}
+
+#startBtn:hover:not(:disabled) {
+    background: #00e676;
+}
+
+#stopBtn {
+    background: #ff1744;
+    color: #fff;
+}
+
+#stopBtn:hover:not(:disabled) {
+    background: #ff5252;
+}
+
+#captureBtn {
+    background: #2979ff;
+    color: #fff;
+}
+
+#captureBtn:hover:not(:disabled) {
+    background: #448aff;
+}
+
+.feed-section, .result-section {
+    background: #16213e;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.video-wrapper {
+    text-align: center;
+}
+
+.video-wrapper img {
+    max-width: 100%;
+    border-radius: 6px;
+    display: none;
+}
+
+.video-wrapper p {
+    color: #888;
+    padding: 60px 0;
+}
+
+.result-section img {
+    max-width: 100%;
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.detection-list table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.detection-list th,
+.detection-list td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #2a2a4a;
+}
+
+.detection-list th {
+    background: #1a1a3e;
+    color: #00d2ff;
+}
+
+.detection-list tr:hover {
+    background: #1e2a4a;
+}
+
+.no-detect {
+    color: #888;
+    text-align: center;
+    padding: 15px;
+}

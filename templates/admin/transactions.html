@@ -1,0 +1,149 @@
+{% extends "admin/_layout.html" %}
+
+{% block page_title %}Transactions{% endblock %}
+{% block topbar_title %}Transactions{% endblock %}
+
+{% block topbar_extra %}
+<button class="btn-glow btn-glow-primary d-none d-md-flex align-items-center gap-2"
+    onclick="exportCSV()" style="padding:.4rem 1rem;font-size:.8rem;">
+    <i class="fas fa-download"></i> Export CSV
+</button>
+{% endblock %}
+
+{% block main_content %}
+<!-- Page header -->
+<div class="rs-page-header mb-4 animate-fade-in-up">
+    <h2 class="rs-page-title">Payment <span class="rs-gradient-text">Transactions</span></h2>
+    <p class="rs-page-sub">Full history of all payments, their status, and revenue breakdown.</p>
+</div>
+
+<!-- ── Revenue KPI Cards ── -->
+<div class="rs-stats-grid mb-4 animate-fade-in-up animation-delay-200">
+    <div class="stats-card">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="icon-badge icon-badge-emerald" style="width:44px;height:44px;border-radius:13px;font-size:1rem;"><i class="fas fa-indian-rupee-sign"></i></div>
+            <span class="rs-badge rs-badge-success">Today</span>
+        </div>
+        <p id="txn-today-rev" class="stats-card-value">
+            <span class="shimmer shimmer-line" style="width:90px;height:24px;display:inline-block;"></span>
+        </p>
+        <p class="stats-card-label">Today's Revenue</p>
+    </div>
+    <div class="stats-card">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="icon-badge icon-badge-primary" style="width:44px;height:44px;border-radius:13px;font-size:1rem;"><i class="fas fa-circle-check"></i></div>
+            <span class="stats-card-delta positive"><i class="fas fa-arrow-trend-up"></i> +1.2%</span>
+        </div>
+        <p id="txn-success-rate" class="stats-card-value">—</p>
+        <p class="stats-card-label">Success Rate</p>
+    </div>
+    <div class="stats-card">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="icon-badge icon-badge-amber" style="width:44px;height:44px;border-radius:13px;font-size:1rem;"><i class="fas fa-receipt"></i></div>
+            <span class="stats-card-delta positive"><i class="fas fa-arrow-trend-up"></i> +9</span>
+        </div>
+        <p id="txn-total-count" class="stats-card-value">
+            <span class="shimmer shimmer-line" style="width:60px;height:24px;display:inline-block;"></span>
+        </p>
+        <p class="stats-card-label">Total Transactions</p>
+    </div>
+    <div class="stats-card">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="icon-badge icon-badge-cyan" style="width:44px;height:44px;border-radius:13px;font-size:1rem;"><i class="fas fa-chart-bar"></i></div>
+            <span class="stats-card-delta positive"><i class="fas fa-arrow-trend-up"></i> +3%</span>
+        </div>
+        <p id="txn-avg" class="stats-card-value">
+            <span class="shimmer shimmer-line" style="width:80px;height:24px;display:inline-block;"></span>
+        </p>
+        <p class="stats-card-label">Avg Transaction</p>
+    </div>
+</div>
+
+<!-- ── Filter Tabs ── -->
+<div class="glass-card mb-4 animate-fade-in-up animation-delay-300">
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 p-3">
+        <div class="rs-tab-nav" id="status-tabs">
+            <button class="rs-tab-btn active" data-status="all"       onclick="setStatusFilter('all',this)">All</button>
+            <button class="rs-tab-btn"         data-status="success"   onclick="setStatusFilter('success',this)">
+                <i class="fas fa-circle-check me-1" style="color:#10b981;font-size:.65rem;"></i>Success
+            </button>
+            <button class="rs-tab-btn"         data-status="pending"   onclick="setStatusFilter('pending',this)">
+                <i class="fas fa-circle me-1" style="color:#f59e0b;font-size:.65rem;"></i>Pending
+            </button>
+            <button class="rs-tab-btn"         data-status="failed"    onclick="setStatusFilter('failed',this)">
+                <i class="fas fa-circle-xmark me-1" style="color:#ef4444;font-size:.65rem;"></i>Failed
+            </button>
+        </div>
+        <div class="rs-search-input" style="min-width:200px;max-width:280px;">
+            <i class="fas fa-magnifying-glass rs-search-icon"></i>
+            <input type="text" id="txn-search" placeholder="Search ID or customer…" class="rs-input" oninput="filterTransactions()">
+        </div>
+    </div>
+</div>
+
+<!-- ── Transaction Table ── -->
+<div class="glass-card animate-fade-in-up animation-delay-400">
+    <div class="card-header-bar">
+        <div class="d-flex align-items-center gap-3">
+            <div class="icon-badge icon-badge-violet"><i class="fas fa-list-check"></i></div>
+            <div>
+                <h2 class="mb-0">Transaction History</h2>
+                <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);" id="txn-count-label">Loading…</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="rs-scroll-x">
+        <table class="rs-admin-table">
+            <thead>
+                <tr>
+                    <th>Transaction ID</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Amount</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                    <th>Date &amp; Time</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="txn-table-body">
+                <tr><td colspan="8" class="text-center py-5">
+                    <div class="rs-spinner mx-auto mb-2"></div>
+                    <p style="color:var(--text-secondary);">Loading transactions…</p>
+                </td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-between align-items-center px-4 py-3"
+        style="border-top:1px solid rgba(99,102,241,.08);">
+        <button id="txn-prev" class="rs-icon-btn rs-icon-btn-primary" onclick="txnChangePage(-1)">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <span id="txn-pagination-info" class="rs-text-xs" style="color:var(--text-secondary);"></span>
+        <button id="txn-next" class="rs-icon-btn rs-icon-btn-primary" onclick="txnChangePage(1)">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+
+<!-- Invoice Modal -->
+<div id="invoice-modal" class="rs-modal-overlay hidden" onclick="closeInvoice(event)">
+    <div class="rs-modal" style="max-width:440px;">
+        <div class="card-header-bar">
+            <div class="d-flex align-items-center gap-3">
+                <div class="icon-badge icon-badge-primary"><i class="fas fa-file-invoice"></i></div>
+                <h2 class="mb-0">Invoice Details</h2>
+            </div>
+            <button class="rs-icon-btn" onclick="closeInvoice()" style="border:none;"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div id="invoice-body" class="p-4"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/admin-transactions.js') }}"></script>
+{% endblock %}

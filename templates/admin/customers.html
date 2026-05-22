@@ -1,0 +1,214 @@
+{% extends "admin/_layout.html" %}
+
+{% block page_title %}Customers{% endblock %}
+{% block topbar_title %}Customers{% endblock %}
+
+{% block topbar_extra %}
+<div class="rs-topbar-stat d-none d-md-flex">
+    <div class="icon-badge icon-badge-cyan" style="width:32px;height:32px;border-radius:9px;">
+        <i class="fas fa-user-plus" style="font-size:.75rem;"></i>
+    </div>
+    <div>
+        <p class="mb-0" style="font-size:.65rem;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:.04em;">New Today</p>
+        <p id="topbar-new-today" class="mb-0 fw-bold" style="font-size:.9rem;color:var(--text-primary);">+3</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block main_content %}
+<!-- Page header -->
+<div class="rs-page-header mb-4 animate-fade-in-up">
+    <h2 class="rs-page-title">Customer <span class="rs-gradient-text">Management</span></h2>
+    <p class="rs-page-sub">View, search, and manage all registered customers and their membership tiers.</p>
+</div>
+
+<!-- ── KPI Cards ── -->
+<div class="rs-stats-grid mb-4 animate-fade-in-up animation-delay-200">
+    <div class="stats-card">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="icon-badge icon-badge-primary" style="width:44px;height:44px;border-radius:13px;font-size:1rem;"><i class="fas fa-users"></i></div>
+            <span class="stats-card-delta positive"><i class="fas fa-arrow-trend-up"></i> +5%</span>
+        </div>
+        <p id="kpi-total" class="stats-card-value"><span class="shimmer shimmer-line" style="width:60px;height:24px;display:inline-block;"></span></p>
+        <p class="stats-card-label">Total Customers</p>
+    </div>
+    <div class="stats-card">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="icon-badge icon-badge-emerald" style="width:44px;height:44px;border-radius:13px;font-size:1rem;"><i class="fas fa-user-plus"></i></div>
+            <span class="stats-card-delta positive"><i class="fas fa-arrow-trend-up"></i> +18%</span>
+        </div>
+        <p id="kpi-new" class="stats-card-value">—</p>
+        <p class="stats-card-label">New This Month</p>
+    </div>
+    <div class="stats-card">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="icon-badge icon-badge-amber" style="width:44px;height:44px;border-radius:13px;font-size:1rem;"><i class="fas fa-crown"></i></div>
+            <span class="stats-card-delta positive"><i class="fas fa-arrow-trend-up"></i> +3</span>
+        </div>
+        <p id="kpi-premium" class="stats-card-value">—</p>
+        <p class="stats-card-label">Gold + Platinum</p>
+    </div>
+    <div class="stats-card">
+        <div class="d-flex align-items-start justify-content-between mb-3">
+            <div class="icon-badge icon-badge-cyan" style="width:44px;height:44px;border-radius:13px;font-size:1rem;"><i class="fas fa-repeat"></i></div>
+            <span class="stats-card-delta flat"><i class="fas fa-minus"></i> Steady</span>
+        </div>
+        <p class="stats-card-value">82%</p>
+        <p class="stats-card-label">Retention Rate</p>
+    </div>
+</div><!-- /kpi -->
+
+<!-- ── Search & Filter Bar ── -->
+<div class="glass-card mb-4 animate-fade-in-up animation-delay-300">
+    <div class="p-3 d-flex flex-wrap gap-3 align-items-center">
+        <div class="rs-search-input flex-grow-1" style="min-width:200px;">
+            <i class="fas fa-magnifying-glass rs-search-icon"></i>
+            <input type="text" id="cust-search" placeholder="Search by name or email…" class="rs-input" oninput="filterCustomers()">
+        </div>
+        <select id="filter-tier" class="rs-select" onchange="filterCustomers()">
+            <option value="">All Tiers</option>
+            <option value="bronze">Bronze</option>
+            <option value="silver">Silver</option>
+            <option value="gold">Gold</option>
+            <option value="platinum">Platinum</option>
+        </select>
+        <select id="filter-role" class="rs-select" onchange="filterCustomers()">
+            <option value="">All Roles</option>
+            <option value="customer">Customer</option>
+            <option value="admin">Admin</option>
+        </select>
+        <button class="btn-glow btn-glow-primary" onclick="loadCustomers(1)" style="padding:.45rem 1.1rem;">
+            <i class="fas fa-rotate me-1"></i> Refresh
+        </button>
+    </div>
+</div>
+
+<!-- ── Customer Table ── -->
+<div class="glass-card animate-fade-in-up animation-delay-400">
+    <div class="card-header-bar">
+        <div class="d-flex align-items-center gap-3">
+            <div class="icon-badge icon-badge-primary"><i class="fas fa-table"></i></div>
+            <div>
+                <h2 class="mb-0">All Customers</h2>
+                <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">
+                    <span id="cust-count-label">Loading…</span>
+                </p>
+            </div>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="rs-text-xs" style="color:var(--text-secondary);">Page</span>
+            <span id="cust-page-label" class="fw-semibold rs-text-xs">1</span>
+        </div>
+    </div>
+
+    <div class="rs-scroll-x">
+        <table class="rs-admin-table">
+            <thead>
+                <tr>
+                    <th>Customer</th>
+                    <th>Tier</th>
+                    <th>Points</th>
+                    <th>Orders</th>
+                    <th>Total Spent</th>
+                    <th>Joined</th>
+                    <th>Role</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="cust-table-body">
+                <tr><td colspan="8" class="text-center py-5">
+                    <div class="rs-spinner mx-auto mb-2"></div>
+                    <p style="color:var(--text-secondary);">Loading customers…</p>
+                </td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-between align-items-center px-4 py-3"
+        style="border-top:1px solid rgba(99,102,241,.08);">
+        <button id="cust-prev" class="rs-icon-btn rs-icon-btn-primary" onclick="changePage(-1)">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <span id="cust-pagination-info" class="rs-text-xs" style="color:var(--text-secondary);"></span>
+        <button id="cust-next" class="rs-icon-btn rs-icon-btn-primary" onclick="changePage(1)">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</div>
+
+<!-- ── Recent Registrations ── -->
+<div class="row g-4 mt-0 animate-fade-in-up animation-delay-500">
+    <div class="col-12 col-lg-5">
+        <div class="glass-card h-100">
+            <div class="card-header-bar">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-badge icon-badge-emerald"><i class="fas fa-user-clock"></i></div>
+                    <h2 class="mb-0">Recent Registrations</h2>
+                </div>
+            </div>
+            <div id="recent-reg-list" class="px-4 pb-2">
+                <div class="shimmer-card mb-2"></div>
+                <div class="shimmer-card mb-2"></div>
+                <div class="shimmer-card mb-2"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-7">
+        <div class="glass-card h-100">
+            <div class="card-header-bar">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-badge icon-badge-amber"><i class="fas fa-layer-group"></i></div>
+                    <h2 class="mb-0">Tier Distribution</h2>
+                </div>
+            </div>
+            <div class="p-4">
+                <div id="tier-bars" class="d-flex flex-column gap-3">
+                    <div class="shimmer-card"></div>
+                    <div class="shimmer-card"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Loyalty Users -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="glass-card">
+            <div class="card-header-bar">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="icon-badge icon-badge-primary"><i class="fas fa-trophy"></i></div>
+                    <div>
+                        <h2 class="mb-0">Top Loyalty Users</h2>
+                        <p class="mb-0 rs-text-xs" style="color:var(--text-secondary);">Customers with highest reward points</p>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4">
+                <div class="rs-admin-table-wrap">
+                    <table class="rs-admin-table w-100">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Customer</th>
+                                <th>Tier</th>
+                                <th>Points</th>
+                                <th>Total Spent</th>
+                                <th>Orders</th>
+                            </tr>
+                        </thead>
+                        <tbody id="loyalty-top-tbody">
+                            <tr><td colspan="6" class="text-center py-3" style="color:var(--text-secondary);">Loading…</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_scripts %}
+<script src="{{ url_for('static', filename='js/admin-customers.js') }}"></script>
+{% endblock %}
