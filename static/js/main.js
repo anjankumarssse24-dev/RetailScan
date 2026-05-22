@@ -237,7 +237,11 @@ function _doCaptureAndDetect() {
                     </div>
                     <button class="btn-glow w-100 justify-content-center mt-3"
                             style="background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 4px 12px rgba(16,185,129,.35);font-size:.88rem;"
-                            onclick="addToCart(${item.detection_id}, '${item.name.replace(/'/g, "\\'")}', '${item.category.replace(/'/g, "\\'")}', ${item.unit_price})">
+                            data-did="${item.detection_id}"
+                            data-name="${(item.name || '').replace(/"/g, '&quot;')}"
+                            data-cat="${(item.category || '').replace(/"/g, '&quot;')}"
+                            data-price="${item.unit_price}"
+                            onclick="addToCartFromBtn(this)">
                         <i class="fas fa-cart-plus"></i> ${item.name} — ₹${item.unit_price}
                     </button>
                 </div>`).join("");
@@ -331,6 +335,15 @@ function addSuggestionToCart(name) {
 // ========================
 // ADD TO CART
 // ========================
+function addToCartFromBtn(btn) {
+    addToCart(
+        parseInt(btn.dataset.did) || 0,
+        btn.dataset.name,
+        btn.dataset.cat,
+        parseFloat(btn.dataset.price) || 0
+    );
+}
+
 function addToCart(detectionId, productName, category, price) {
     fetch("/api/add_to_cart", {
         method: "POST",
