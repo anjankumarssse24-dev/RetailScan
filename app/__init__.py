@@ -3,6 +3,14 @@ App Factory for Smart Retail Checkout System
 """
 from flask import Flask, redirect, url_for, session, request
 import os
+import mimetypes
+
+# Fix MIME types on Linux servers where they may be missing
+mimetypes.add_type("application/javascript", ".js")
+mimetypes.add_type("text/css", ".css")
+mimetypes.add_type("image/png", ".png")
+mimetypes.add_type("image/svg+xml", ".svg")
+mimetypes.add_type("application/manifest+json", ".webmanifest")
 
 
 def create_app():
