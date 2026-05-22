@@ -155,9 +155,9 @@
                             </div>
                         </div>
                         <div class="camera-wrapper" style="min-height:280px;" id="camera-container">
-                            <img id="camera-feed" class="hidden w-100" alt="Camera Feed"
-                                 style="max-height:400px;object-fit:cover;border-radius:0;"
-                                 id="camera-stream">
+                            <video id="camera-feed" class="hidden w-100" autoplay playsinline muted
+                                 style="max-height:400px;object-fit:cover;border-radius:0;"></video>
+                            <canvas id="camera-canvas" style="display:none;"></canvas>
                             <div id="camera-placeholder" class="d-flex flex-column align-items-center justify-content-center gap-3" style="min-height:280px;">
                                 <div class="icon-badge icon-badge-violet" style="width:68px;height:68px;border-radius:18px;font-size:1.8rem;">
                                     <i class="fas fa-video-slash"></i>

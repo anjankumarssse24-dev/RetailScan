@@ -11,39 +11,41 @@ function updateCartCount() {
 }
 
 // ========================
-// CAMERA
+// CAMERA  (browser getUserMedia)
 // ========================
+let _mediaStream = null;
+
 function updateCameraUI(active) {
     cameraActive = active;
-    const feed = document.getElementById("camera-feed");
-    const ph = document.getElementById("camera-placeholder");
-    const status = document.getElementById("camera-status");
+    const feed    = document.getElementById("camera-feed");
+    const ph      = document.getElementById("camera-placeholder");
+    const status  = document.getElementById("camera-status");
     const scanLine = document.getElementById("scan-line");
     const btnStart = document.getElementById("btn-start-camera");
-    const btnStop = document.getElementById("btn-stop-camera");
-    const btnCapture = document.getElementById("btn-capture");
+    const btnStop  = document.getElementById("btn-stop-camera");
+    const btnCapture    = document.getElementById("btn-capture");
     const btnCaptureMob = document.getElementById("btn-capture-mob");
 
     if (active) {
-        feed.src = "/video_feed?" + Date.now();
         feed.classList.remove("hidden");
         ph.classList.add("hidden");
         if (scanLine) scanLine.classList.remove("hidden");
         status.className = "status-pill online";
         status.innerHTML = '<span class="status-dot"></span>LIVE';
         btnStart.disabled = true;
-        btnStop.disabled = false;
+        btnStop.disabled  = false;
         btnCapture.disabled = false;
         if (btnCaptureMob) btnCaptureMob.disabled = false;
     } else {
-        feed.src = "";
+        if (_mediaStream) { _mediaStream.getTracks().forEach(t => t.stop()); _mediaStream = null; }
+        feed.srcObject = null;
         feed.classList.add("hidden");
         ph.classList.remove("hidden");
         if (scanLine) scanLine.classList.add("hidden");
         status.className = "status-pill offline";
         status.innerHTML = '<span class="status-dot"></span>OFFLINE';
         btnStart.disabled = false;
-        btnStop.disabled = true;
+        btnStop.disabled  = true;
         btnCapture.disabled = true;
         if (btnCaptureMob) btnCaptureMob.disabled = true;
     }
@@ -54,37 +56,35 @@ document.getElementById("btn-start-camera").addEventListener("click", () => {
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i> Starting...';
 
-    fetch("/api/camera/start", { method: "POST" })
-        .then(r => r.json())
-        .then(d => {
-            if (d.success) {
-                updateCameraUI(true);
-                showToast("Camera started", "success");
-            } else {
-                const msg = d.error || "Camera failed to start";
-                // Friendly error messages for common failures
-                if (msg.toLowerCase().includes("permission") || msg.toLowerCase().includes("denied")) {
-                    showToast("🚫 Camera permission denied. Please allow camera access.", "error", 6000);
-                } else if (msg.toLowerCase().includes("not found") || msg.toLowerCase().includes("unavailable")) {
-                    showToast("📷 No camera detected. Connect a camera and try again.", "error", 6000);
-                } else if (msg.toLowerCase().includes("busy") || msg.toLowerCase().includes("in use")) {
-                    showToast("📷 Camera is in use by another app. Close it and retry.", "error", 5000);
-                } else {
-                    showToast(msg, "error");
-                }
-                btn.disabled = false;
-            }
-            btn.innerHTML = '<i class="fas fa-play text-xs"></i> Start';
+    const constraints = { video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } };
+
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then(stream => {
+            _mediaStream = stream;
+            const feed = document.getElementById("camera-feed");
+            feed.srcObject = stream;
+            updateCameraUI(true);
+            showToast("Camera started", "success");
         })
-        .catch(e => {
-            showToast("Could not reach camera service. Is the server running?", "error", 5000);
+        .catch(err => {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-play text-xs"></i> Start';
+            const msg = err.message || err.name || "";
+            if (msg.includes("Permission") || msg.includes("NotAllowed") || err.name === "NotAllowedError") {
+                showToast("🚫 Camera permission denied. Allow camera access in your browser.", "error", 6000);
+            } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+                showToast("📷 No camera found on this device.", "error", 6000);
+            } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+                showToast("📷 Camera is busy — close other apps using it.", "error", 5000);
+            } else {
+                showToast("Could not start camera: " + msg, "error", 5000);
+            }
         });
 });
 
 document.getElementById("btn-stop-camera").addEventListener("click", () => {
-    fetch("/api/camera/stop", { method: "POST" }).then(() => { updateCameraUI(false); showToast("Camera stopped"); });
+    updateCameraUI(false);
+    showToast("Camera stopped");
 });
 
 // ========================
@@ -121,11 +121,23 @@ function _doCaptureAndDetect() {
     if (btnCapture)    btnCapture.disabled    = true;
     if (btnCaptureMob) btnCaptureMob.disabled = true;
 
-    const resultArea = document.getElementById("result-area");
+    // Snapshot the live video frame into a hidden canvas
+    const video  = document.getElementById("camera-feed");
+    const canvas = document.getElementById("camera-canvas");
+    canvas.width  = video.videoWidth  || 640;
+    canvas.height = video.videoHeight || 480;
+    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+    const imageData = canvas.toDataURL("image/jpeg", 0.85);
+
+    const resultArea   = document.getElementById("result-area");
     const overlayLabel = document.getElementById("overlay-label");
     startScanUI();
 
-    fetch("/api/capture", { method: "POST" })
+    fetch("/api/capture_frame", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_data: imageData })
+    })
         .then(r => r.json())
         .then(data => {
             stopScanUI();
@@ -302,8 +314,8 @@ function addAllToCart(items) {
     Promise.all(promises).then(() => { showToast(`${added} item${added > 1 ? 's' : ''} added to cart!`); updateCartCount(); });
 }
 
-// Init
-fetch("/api/camera/status").then(r => r.json()).then(d => updateCameraUI(d.active));
+// Init — camera always starts inactive (browser getUserMedia)
+updateCameraUI(false);
 updateCartCount();
 
 // ========================
@@ -323,7 +335,7 @@ function openFullscreenScan() {
             <i class="fas fa-compress me-1"></i>Exit
         </button>
         <div class="scan-fullscreen-feed" id="fs-feed-wrap">
-            <img id="fs-feed" src="/video_feed?fs=1" alt="Camera">
+            <video id="fs-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;"></video>
             <div class="scan-fullscreen-line"></div>
         </div>
         <div class="d-flex align-items-center gap-4">
@@ -335,6 +347,9 @@ function openFullscreenScan() {
         <p style="color:rgba(255,255,255,.5);font-size:.75rem;">Tap button to capture &amp; detect</p>`;
 
     document.body.appendChild(overlay);
+
+    // Attach live stream to fullscreen video
+    if (_mediaStream) document.getElementById("fs-video").srcObject = _mediaStream;
 }
 
 function closeFullscreenScan() {
@@ -346,17 +361,32 @@ function fsCapture() {
     const btn = document.getElementById("fs-capture-btn");
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
 
-    fetch("/api/capture", { method: "POST" })
+    // Snapshot from fullscreen video
+    const fsVideo = document.getElementById("fs-video");
+    const canvas  = document.getElementById("camera-canvas");
+    if (fsVideo) {
+        canvas.width  = fsVideo.videoWidth  || 640;
+        canvas.height = fsVideo.videoHeight || 480;
+        canvas.getContext("2d").drawImage(fsVideo, 0, 0, canvas.width, canvas.height);
+    }
+    const imageData = canvas.toDataURL("image/jpeg", 0.85);
+
+    closeFullscreenScan();
+
+    fetch("/api/capture_frame", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_data: imageData })
+    })
         .then(r => r.json())
         .then(data => {
-            closeFullscreenScan();
-            if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-camera"></i>'; }
             if (data.success && data.items?.length) {
                 showToast(`✅ Detected ${data.total_items} item(s)!`, "success");
                 updateCartCount();
+                _doCaptureAndDetect && updateCartCount();
             } else {
                 showToast("No products detected", "warning");
             }
         })
-        .catch(() => { closeFullscreenScan(); showToast("Capture failed", "error"); });
+        .catch(() => { showToast("Capture failed", "error"); });
 }

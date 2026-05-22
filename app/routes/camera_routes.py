@@ -14,12 +14,8 @@ def video_feed():
 
 @camera_bp.route("/api/camera/start", methods=["POST"])
 def api_camera_start():
-    if is_camera_active():
-        return jsonify({"success": True, "message": "Camera already running"})
-    result = init_camera()
-    if result:
-        return jsonify({"success": True, "message": "Camera started"})
-    return jsonify({"success": False, "error": "Failed to start camera"}), 500
+    # Browser-side camera (getUserMedia) — server always returns success
+    return jsonify({"success": True, "message": "Use browser camera"})
 
 
 @camera_bp.route("/api/camera/stop", methods=["POST"])
