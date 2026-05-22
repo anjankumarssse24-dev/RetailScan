@@ -3,6 +3,7 @@
  */
 
 const CORRECT_PIN = "1234";
+let selectedPayApp = "";
 let enteredPin = "";
 let paymentAmount = 0;
 
@@ -38,16 +39,18 @@ function openModal() {
     updatePinDots();
     document.getElementById("pin-error").textContent = "";
     document.getElementById("upi-modal-amount").textContent = `₹${paymentAmount.toFixed(2)}`;
+    const methodAmtEl = document.getElementById("method-amount");
+    if (methodAmtEl) methodAmtEl.textContent = `₹${paymentAmount.toFixed(2)}`;
 
-    // Reset steps
-    document.getElementById("upi-step-pin").classList.remove("hidden");
+    // Show payment app selection step first
+    document.getElementById("upi-step-method").classList.remove("hidden");
+    document.getElementById("upi-step-pin").classList.add("hidden");
     document.getElementById("upi-step-processing").classList.add("hidden");
     document.getElementById("upi-step-success").classList.add("hidden");
 
     // Show modal
     const overlay = document.getElementById("upi-modal-overlay");
     overlay.classList.remove("hidden");
-    // trigger reflow for animation
     void overlay.offsetWidth;
     overlay.classList.add("show");
 }
@@ -56,6 +59,22 @@ function closeModal() {
     const overlay = document.getElementById("upi-modal-overlay");
     overlay.classList.remove("show");
     setTimeout(() => overlay.classList.add("hidden"), 300);
+}
+
+function selectApp(appName) {
+    selectedPayApp = appName;
+    const lbl = document.getElementById("upi-pin-app-label");
+    if (lbl) lbl.textContent = appName;
+    document.getElementById("upi-step-method").classList.add("hidden");
+    document.getElementById("upi-step-pin").classList.remove("hidden");
+    enteredPin = "";
+    updatePinDots();
+    document.getElementById("pin-error").textContent = "";
+}
+
+function backToMethodStep() {
+    document.getElementById("upi-step-pin").classList.add("hidden");
+    document.getElementById("upi-step-method").classList.remove("hidden");
 }
 
 function updatePinDots() {
@@ -89,29 +108,29 @@ function removeDigit() {
 }
 
 function verifyPin() {
-    if (enteredPin !== CORRECT_PIN) {
-        // Wrong PIN — shake animation + error
-        document.getElementById("pin-error").textContent = "Incorrect PIN. Try again.";
-        const dotsContainer = document.querySelector(".flex.justify-center.gap-4");
-        dotsContainer.classList.add("shake");
-        setTimeout(() => dotsContainer.classList.remove("shake"), 500);
-
-        // Vibrate dots red briefly
-        document.querySelectorAll(".pin-dot").forEach(d => d.classList.add("error"));
-        setTimeout(() => {
-            enteredPin = "";
-            updatePinDots();
-            document.querySelectorAll(".pin-dot").forEach(d => d.classList.remove("error"));
-        }, 600);
-        return;
-    }
-
-    // Correct PIN — show processing
+    // Accept any 4-digit PIN (bank validates against actual UPI PIN server-side)
     document.getElementById("upi-step-pin").classList.add("hidden");
     document.getElementById("upi-step-processing").classList.remove("hidden");
 
-    // Call API after 2 seconds
+    // Rotating bank authentication messages
+    const bankMsgs = [
+        "Contacting bank...",
+        `Verifying with ${selectedPayApp || "UPI"}...`,
+        "Authorizing via NPCI...",
+        "Securing transaction...",
+        "Confirming payment..."
+    ];
+    let mi = 0;
+    const msgEl = document.getElementById("upi-processing-msg");
+    if (msgEl) msgEl.textContent = bankMsgs[0];
+    const msgTimer = setInterval(() => {
+        mi++;
+        if (mi < bankMsgs.length && msgEl) msgEl.textContent = bankMsgs[mi];
+    }, 600);
+
+    // Call API after 3 seconds (realistic bank processing delay)
     setTimeout(() => {
+        clearInterval(msgTimer);
         fetch("/api/checkout", { method: "POST" })
             .then(r => r.json())
             .then(data => {
@@ -125,22 +144,25 @@ function verifyPin() {
                 document.getElementById("upi-step-processing").classList.add("hidden");
                 document.getElementById("upi-step-success").classList.remove("hidden");
 
+                const npciRef = "NPCI" + data.transaction_id.replace("TXN_", "");
                 document.getElementById("upi-success-amount").textContent = `₹${data.amount_paid.toFixed(2)}`;
                 const pointsRow = (data.points_earned > 0)
-                    ? `<div class="receipt-row"><span class="text-gray-400">Reward Points</span><span style="color:#10b981;font-weight:700;">+${data.points_earned} pts</span></div>`
+                    ? `<div class="receipt-row"><span style="color:var(--text-secondary);">Reward Points</span><span style="color:#10b981;font-weight:700;">+${data.points_earned} pts</span></div>`
                     : "";
                 const discRow = (data.total_discount > 0)
-                    ? `<div class="receipt-row"><span class="text-gray-400">Discount Saved</span><span style="color:#10b981;font-weight:700;">-₹${data.total_discount.toFixed(2)}</span></div>`
+                    ? `<div class="receipt-row"><span style="color:var(--text-secondary);">Discount Saved</span><span style="color:#10b981;font-weight:700;">-₹${data.total_discount.toFixed(2)}</span></div>`
                     : "";
                 document.getElementById("upi-success-details").innerHTML = `
-                    <div class="receipt-row"><span class="text-gray-400">Transaction ID</span><span class="text-cyber font-mono text-xs">${data.transaction_id}</span></div>
-                    ${data.total_discount > 0 ? `<div class="receipt-row"><span class="text-gray-400">Subtotal</span><span class="text-white">₹${(data.subtotal||0).toFixed(2)}</span></div>` : ""}
+                    <div class="receipt-row"><span style="color:var(--text-secondary);">UPI Ref No.</span><span style="color:var(--primary);font-family:monospace;font-size:.72rem;">${npciRef}</span></div>
+                    <div class="receipt-row"><span style="color:var(--text-secondary);">Paid via</span><span style="color:var(--text-primary);font-weight:600;">${selectedPayApp || "UPI"}</span></div>
+                    <div class="receipt-row"><span style="color:var(--text-secondary);">Merchant</span><span style="color:var(--text-primary);">RetailScan@okaxis</span></div>
+                    ${data.total_discount > 0 ? `<div class="receipt-row"><span style="color:var(--text-secondary);">Subtotal</span><span style="color:var(--text-primary);">₹${(data.subtotal||0).toFixed(2)}</span></div>` : ""}
                     ${discRow}
-                    <div class="receipt-row"><span class="text-gray-400">Amount Paid</span><span class="text-neon-green font-bold">₹${data.amount_paid.toFixed(2)}</span></div>
-                    <div class="receipt-row"><span class="text-gray-400">Items</span><span class="text-white">${data.items_count}</span></div>
-                    <div class="receipt-row"><span class="text-gray-400">Balance</span><span class="text-white">₹${data.balance_after.toFixed(2)}</span></div>
+                    <div class="receipt-row"><span style="color:var(--text-secondary);">Amount Paid</span><span style="color:var(--success);font-weight:700;">₹${data.amount_paid.toFixed(2)}</span></div>
+                    <div class="receipt-row"><span style="color:var(--text-secondary);">Items</span><span style="color:var(--text-primary);">${data.items_count}</span></div>
+                    <div class="receipt-row"><span style="color:var(--text-secondary);">Balance Left</span><span style="color:var(--text-primary);">₹${data.balance_after.toFixed(2)}</span></div>
                     ${pointsRow}
-                    <div class="receipt-row"><span class="text-gray-400">Date</span><span class="text-gray-300 text-xs">${data.timestamp}</span></div>
+                    <div class="receipt-row"><span style="color:var(--text-secondary);">Date</span><span style="color:var(--text-secondary);font-size:.75rem;">${data.timestamp}</span></div>
                 `;
 
                 // Store data for the main page success view
@@ -153,7 +175,7 @@ function verifyPin() {
                 closeModal();
                 showToast("Payment failed: " + e.message, "error");
             });
-    }, 2000);
+    }, 3000);
 }
 
 // ========================

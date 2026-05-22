@@ -313,21 +313,6 @@ def send_payment_email(user_email, transaction_id, timestamp, items, total_amoun
 
             print(f"[EMAIL] Connecting to {Config.SMTP_SERVER}:{Config.SMTP_PORT} (SSL)...")
             ctx = ssl.create_default_context()
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = f"✅ Payment Receipt — ₹{total_amount:.2f} | RetailScan"
-            msg["From"] = f"RetailScan <{Config.EMAIL_USER}>"
-            msg["To"] = user_email
-
-            # Plain text fallback
-            plain = f"Payment Successful!\n\nTransaction ID: {transaction_id}\nAmount: ₹{total_amount:.2f}\nDate: {timestamp}\n\nThank you for shopping with RetailScan!"
-            msg.attach(MIMEText(plain, "plain"))
-
-            # HTML version
-            html = _build_receipt_html(transaction_id, timestamp, items, total_amount)
-            msg.attach(MIMEText(html, "html"))
-
-            print(f"[EMAIL] Connecting to {Config.SMTP_SERVER}:{Config.SMTP_PORT} (SSL)...")
-            ctx = ssl.create_default_context()
             with smtplib.SMTP_SSL(Config.SMTP_SERVER, Config.SMTP_PORT, timeout=30, context=ctx) as server:
                 print(f"[EMAIL] Logging in as {Config.EMAIL_USER}...")
                 server.login(Config.EMAIL_USER, Config.EMAIL_PASS)
