@@ -309,7 +309,6 @@ function addSuggestionToCart(name) {
     })
     .catch(() => showToast("Could not add item", "error"));
 }
-});
 
 // ========================
 // ADD TO CART
