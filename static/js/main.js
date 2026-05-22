@@ -117,20 +117,16 @@ const scanMessages = ["Capturing image...","Processing image...","Scanning for p
 
 function startScanUI() {
     scanSeconds = 0;
-    const overlay = document.getElementById("loading-overlay");
-    const status = document.getElementById("analysis-status");
-    status.textContent = scanMessages[0];
-    overlay.classList.remove("hidden");
     scanTimer = setInterval(() => {
         scanSeconds++;
         let i = scanSeconds < 2 ? 0 : scanSeconds < 4 ? 1 : scanSeconds < 7 ? 2 : scanSeconds < 10 ? 3 : scanSeconds < 13 ? 4 : scanSeconds < 16 ? 5 : scanSeconds < 20 ? 6 : scanSeconds < 25 ? 7 : 8;
-        status.textContent = scanMessages[i];
+        const msg = document.getElementById("result-scan-msg");
+        if (msg) msg.textContent = scanMessages[i];
     }, 1000);
 }
 
 function stopScanUI() {
     if (scanTimer) { clearInterval(scanTimer); scanTimer = null; }
-    document.getElementById("loading-overlay").classList.add("hidden");
 }
 
 // ========================
@@ -152,6 +148,23 @@ function _doCaptureAndDetect() {
 
     const resultArea   = document.getElementById("result-area");
     const overlayLabel = document.getElementById("overlay-label");
+
+    // Show inline processing animation (like payment processing)
+    resultArea.innerHTML = `
+        <div class="text-center py-5 w-100">
+            <div class="upi-processing-ring mx-auto mb-4">
+                <div class="upi-ring-outer"></div>
+                <div class="upi-ring-inner"></div>
+                <i class="fas fa-barcode fs-5 absolute-center" style="color:var(--primary);z-index:10;"></i>
+            </div>
+            <p class="fw-semibold fs-5 mb-2" style="color:var(--text-primary);">Detecting Products…</p>
+            <p id="result-scan-msg" class="small mb-4" style="color:var(--text-secondary);">${scanMessages[0]}</p>
+            <div class="d-flex gap-2 justify-content-center">
+                <span class="loading-dot"></span>
+                <span class="loading-dot delay-1"></span>
+                <span class="loading-dot delay-2"></span>
+            </div>
+        </div>`;
     startScanUI();
 
     // Convert canvas to JPEG Blob, then send as FormData (binary — no base64 overhead)
