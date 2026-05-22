@@ -56,11 +56,14 @@ class Config:
     # Camera settings
     CAMERA_INDEX = 0
 
-    # SMTP Email settings
+    # Email — Resend API (HTTPS, works on Render free tier)
+    RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+
+    # Legacy SMTP settings (kept for local testing only)
     SMTP_SERVER = "smtp.gmail.com"
     SMTP_PORT = 587
     EMAIL_USER = os.environ.get("EMAIL_USER", "")
-    EMAIL_PASS = os.environ.get("EMAIL_PASS", "").replace(" ", "")  # strip spaces from App Password
+    EMAIL_PASS = os.environ.get("EMAIL_PASS", "").replace(" ", "")
 
     # Admin email — any user logging in with this email gets admin role automatically
     ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")

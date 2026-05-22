@@ -1,11 +1,8 @@
 """
-Email service - SMTP email receipt system with premium HTML templates
+Email service - Resend API (HTTPS) email receipt system
 """
-import smtplib
-import ssl
 import threading
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
+import requests
 from app.config import Config
 
 
@@ -289,45 +286,43 @@ def _build_analytics_sections(analytics: dict) -> str:
 def send_payment_email(user_email, transaction_id, timestamp, items, total_amount,
                        analytics=None):
     """
-    Send an analytics-enhanced HTML payment receipt email.
+    Send an analytics-enhanced HTML payment receipt email via Resend API (HTTPS).
     Runs in a background thread to not block the response.
     """
     def _send():
         try:
-            if not Config.EMAIL_USER or not Config.EMAIL_PASS:
-                print("[EMAIL] Skipped — EMAIL_USER or EMAIL_PASS not configured (set env vars in Render Dashboard)")
+            if not Config.RESEND_API_KEY:
+                print("[EMAIL] Skipped — RESEND_API_KEY not configured")
                 return
-            print(f"[EMAIL] Starting send to {user_email}...")
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = f"✅ Payment Receipt — ₹{total_amount:.2f} | RetailScan"
-            msg["From"] = f"RetailScan <{Config.EMAIL_USER}>"
-            msg["To"] = user_email
-
+            print(f"[EMAIL] Sending via Resend to {user_email}...")
             plain = (
                 f"Payment Successful!\n\nTransaction ID: {transaction_id}\n"
-                f"Amount: ₹{total_amount:.2f}\nDate: {timestamp}\n\n"
+                f"Amount: Rs.{total_amount:.2f}\nDate: {timestamp}\n\n"
                 f"Thank you for shopping with RetailScan!"
             )
-            msg.attach(MIMEText(plain, "plain"))
-
             html = _build_receipt_html(transaction_id, timestamp, items, total_amount,
                                        analytics=analytics)
-            msg.attach(MIMEText(html, "html"))
-
-            print(f"[EMAIL] Connecting to {Config.SMTP_SERVER}:{Config.SMTP_PORT} (STARTTLS)...")
-            with smtplib.SMTP(Config.SMTP_SERVER, Config.SMTP_PORT, timeout=30) as server:
-                server.ehlo()
-                server.starttls(context=ssl.create_default_context())
-                server.ehlo()
-                print(f"[EMAIL] Logging in as {Config.EMAIL_USER}...")
-                server.login(Config.EMAIL_USER, Config.EMAIL_PASS)
-                print(f"[EMAIL] Sending to {user_email}...")
-                server.sendmail(Config.EMAIL_USER, user_email, msg.as_string())
-                server.sendmail(Config.EMAIL_USER, user_email, msg.as_string())
-
-            print(f"[EMAIL] Receipt sent to {user_email} for {transaction_id}")
+            resp = requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {Config.RESEND_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "from": "RetailScan <onboarding@resend.dev>",
+                    "to": [user_email],
+                    "subject": f"Payment Receipt — Rs.{total_amount:.2f} | RetailScan",
+                    "html": html,
+                    "text": plain,
+                },
+                timeout=30,
+            )
+            if resp.status_code in (200, 201):
+                print(f"[EMAIL] Receipt sent to {user_email} via Resend")
+            else:
+                print(f"[EMAIL] Resend error {resp.status_code}: {resp.text}")
         except Exception as e:
-            print(f"[EMAIL] Failed to send to {user_email}: {e}")
+            print(f"[EMAIL] Failed: {e}")
 
     thread = threading.Thread(target=_send, daemon=True)
     thread.start()

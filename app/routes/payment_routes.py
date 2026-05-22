@@ -2,8 +2,7 @@
 Payment routes - Checkout, wallet, and payment history
 """
 import json
-import smtplib
-import ssl
+import requests
 from flask import Blueprint, jsonify, request, session
 from app.services.payment_service import process_payment, get_wallet, get_payment_history
 from app.services.email_service import send_payment_email
@@ -17,18 +16,25 @@ payment_bp = Blueprint("payment", __name__)
 
 @payment_bp.route("/api/test-email", methods=["GET"])
 def test_email():
-    """Synchronous SMTP test — visit /api/test-email to diagnose email on Render."""
-    if not Config.EMAIL_USER or not Config.EMAIL_PASS:
-        return jsonify({"ok": False, "error": "EMAIL_USER or EMAIL_PASS env var not set"}), 500
+    """Synchronous Resend API test — visit /api/test-email to diagnose email on Render."""
+    if not Config.RESEND_API_KEY:
+        return jsonify({"ok": False, "error": "RESEND_API_KEY env var not set"}), 500
     try:
-        with smtplib.SMTP("smtp.gmail.com", 587, timeout=20) as s:
-            s.ehlo()
-            s.starttls(context=ssl.create_default_context())
-            s.ehlo()
-            s.login(Config.EMAIL_USER, Config.EMAIL_PASS)
-            s.sendmail(Config.EMAIL_USER, Config.EMAIL_USER,
-                       f"Subject: RetailScan SMTP Test\r\n\r\nSMTP test from Render — it works!")
-        return jsonify({"ok": True, "sent_to": Config.EMAIL_USER})
+        resp = requests.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {Config.RESEND_API_KEY}",
+                     "Content-Type": "application/json"},
+            json={
+                "from": "RetailScan <onboarding@resend.dev>",
+                "to": [Config.EMAIL_USER or "anjan23102002@gmail.com"],
+                "subject": "RetailScan Email Test",
+                "text": "SMTP test from Render via Resend — it works!",
+            },
+            timeout=15,
+        )
+        if resp.status_code in (200, 201):
+            return jsonify({"ok": True, "sent_to": Config.EMAIL_USER or "anjan23102002@gmail.com"})
+        return jsonify({"ok": False, "error": resp.text}), 500
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
