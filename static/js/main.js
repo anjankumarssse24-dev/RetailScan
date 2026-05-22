@@ -78,11 +78,6 @@ document.getElementById("btn-start-camera").addEventListener("click", async () =
         feed.onloadedmetadata = () => feed.play().catch(() => {});
         updateCameraUI(true);
         showToast("Camera started", "success");
-        // Scroll so Capture button is visible without needing to scroll manually
-        setTimeout(() => {
-            const captureBtn = document.getElementById("btn-capture");
-            if (captureBtn) captureBtn.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        }, 350);
     } catch (err) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-play text-xs"></i> Start';
@@ -100,10 +95,6 @@ document.getElementById("btn-start-camera").addEventListener("click", async () =
                 document.getElementById("camera-feed").srcObject = stream2;
                 updateCameraUI(true);
                 showToast("Camera started", "success");
-                setTimeout(() => {
-                    const captureBtn = document.getElementById("btn-capture");
-                    if (captureBtn) captureBtn.scrollIntoView({ behavior: "smooth", block: "nearest" });
-                }, 350);
             } catch(e2) {
                 showToast("Could not start camera: " + (e2.message || e2.name), "error", 5000);
             }
