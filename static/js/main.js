@@ -184,17 +184,19 @@ function _doCaptureAndDetect() {
         .then(data => {
             stopScanUI();
             if (!data.success) {
-                const err = data.error || "Detection failed";
-                // Friendly AI error messages
-                if (err.toLowerCase().includes("gemini") || err.toLowerCase().includes("api")) {
-                    showToast("🤖 AI detection temporarily unavailable. Please try again.", "warning", 5000);
-                } else if (err.toLowerCase().includes("quota") || err.toLowerCase().includes("rate")) {
-                    showToast("⏳ AI quota reached — retrying shortly.", "warning", 5000);
-                } else if (err.toLowerCase().includes("offline") || err.toLowerCase().includes("network")) {
-                    showToast("📡 Offline — connect to internet for AI detection.", "warning", 5000);
-                } else {
-                    showToast(err, "error");
-                }
+                const rawErr = (data.error || "").toLowerCase();
+                const msg = rawErr.includes("quota") || rawErr.includes("rate") ? "Server is busy — please try again in a moment."
+                          : rawErr.includes("offline") || rawErr.includes("network") ? "No internet connection detected."
+                          : "Could not process the image. Please try again.";
+                resultArea.innerHTML = `
+                    <div class="text-center py-5 w-100">
+                        <div style="width:68px;height:68px;border-radius:18px;font-size:1.8rem;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                            <i class="fas fa-exclamation-triangle" style="color:#ef4444;"></i>
+                        </div>
+                        <p class="fw-semibold mb-1" style="color:#ef4444;font-size:1.1rem;">Detection Failed</p>
+                        <p class="mb-0" style="color:var(--text-secondary);font-size:.85rem;">${msg}</p>
+                    </div>`;
+                showToast("Detection failed — try again", "error", 4000);
                 return;
             }
 
@@ -209,15 +211,15 @@ function _doCaptureAndDetect() {
                 overlayLabel.classList.remove("hidden");
                 setTimeout(() => overlayLabel.classList.add("hidden"), 5000);
                 resultArea.innerHTML = `
-                    <div class="w-full">
-                        <img src="/captured_images/${data.image_path}" class="w-full rounded-xl border border-white/10 mb-4" alt="Captured">
-                        <div class="rounded-xl bg-red-500/10 border border-red-500/20 p-4 text-center">
-                            <i class="fas fa-exclamation-triangle text-2xl text-red-400 mb-2"></i>
-                            <p class="text-red-400 font-semibold">No Product Detected</p>
-                            <p class="text-gray-500 text-sm mt-1">${scene || "No retail items visible."}</p>
+                    <div class="w-100">
+                        <img src="/captured_images/${data.image_path}" class="w-100 rounded-3 mb-3" style="border:1px solid rgba(239,68,68,.15);max-height:180px;object-fit:cover;" alt="Captured">
+                        <div class="rounded-3 p-4 text-center" style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);">
+                            <i class="fas fa-search-minus mb-2" style="color:#ef4444;font-size:1.6rem;"></i>
+                            <p class="fw-semibold mb-1" style="color:#ef4444;">No Products Found</p>
+                            <p class="mb-0" style="color:var(--text-secondary);font-size:.85rem;">${scene || "No retail items visible in this image. Try better lighting or move closer."}</p>
                         </div>
                     </div>`;
-                showToast("No product detected", "error");
+                showToast("No products found — try again", "error");
                 return;
             }
 
