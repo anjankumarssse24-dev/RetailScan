@@ -17,12 +17,12 @@ let _mediaStream = null;
 
 function updateCameraUI(active) {
     cameraActive = active;
-    const feed    = document.getElementById("camera-feed");
-    const ph      = document.getElementById("camera-placeholder");
-    const status  = document.getElementById("camera-status");
-    const scanLine = document.getElementById("scan-line");
-    const btnStart = document.getElementById("btn-start-camera");
-    const btnStop  = document.getElementById("btn-stop-camera");
+    const feed      = document.getElementById("camera-feed");
+    const ph        = document.getElementById("camera-placeholder");
+    const status    = document.getElementById("camera-status");
+    const scanLine  = document.getElementById("scan-line");
+    const btnStart  = document.getElementById("btn-start-camera");
+    const btnStop   = document.getElementById("btn-stop-camera");
     const btnCapture    = document.getElementById("btn-capture");
     const btnCaptureMob = document.getElementById("btn-capture-mob");
 
@@ -33,53 +33,75 @@ function updateCameraUI(active) {
         status.className = "status-pill online";
         status.innerHTML = '<span class="status-dot"></span>LIVE';
         btnStart.disabled = true;
+        btnStart.innerHTML = '<i class="fas fa-play text-xs"></i> Start';
         btnStop.disabled  = false;
         btnCapture.disabled = false;
         if (btnCaptureMob) btnCaptureMob.disabled = false;
     } else {
         if (_mediaStream) { _mediaStream.getTracks().forEach(t => t.stop()); _mediaStream = null; }
-        feed.srcObject = null;
+        if (feed.srcObject) { feed.srcObject = null; }
         feed.classList.add("hidden");
         ph.classList.remove("hidden");
         if (scanLine) scanLine.classList.add("hidden");
         status.className = "status-pill offline";
         status.innerHTML = '<span class="status-dot"></span>OFFLINE';
         btnStart.disabled = false;
+        btnStart.innerHTML = '<i class="fas fa-play text-xs"></i> Start';
         btnStop.disabled  = true;
         btnCapture.disabled = true;
         if (btnCaptureMob) btnCaptureMob.disabled = true;
     }
 }
 
-document.getElementById("btn-start-camera").addEventListener("click", () => {
+document.getElementById("btn-start-camera").addEventListener("click", async () => {
     const btn = document.getElementById("btn-start-camera");
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i> Starting...';
 
-    const constraints = { video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } } };
+    // Check browser support first
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play text-xs"></i> Start';
+        showToast("❌ Camera not supported. Open the app over HTTPS in Chrome or Safari.", "error", 7000);
+        return;
+    }
 
-    navigator.mediaDevices.getUserMedia(constraints)
-        .then(stream => {
-            _mediaStream = stream;
-            const feed = document.getElementById("camera-feed");
-            feed.srcObject = stream;
-            updateCameraUI(true);
-            showToast("Camera started", "success");
-        })
-        .catch(err => {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-play text-xs"></i> Start';
-            const msg = err.message || err.name || "";
-            if (msg.includes("Permission") || msg.includes("NotAllowed") || err.name === "NotAllowedError") {
-                showToast("🚫 Camera permission denied. Allow camera access in your browser.", "error", 6000);
-            } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
-                showToast("📷 No camera found on this device.", "error", 6000);
-            } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
-                showToast("📷 Camera is busy — close other apps using it.", "error", 5000);
-            } else {
-                showToast("Could not start camera: " + msg, "error", 5000);
-            }
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: false
         });
+        _mediaStream = stream;
+        const feed = document.getElementById("camera-feed");
+        feed.srcObject = stream;
+        // Explicitly play — required on some mobile browsers
+        feed.onloadedmetadata = () => feed.play().catch(() => {});
+        updateCameraUI(true);
+        showToast("Camera started", "success");
+    } catch (err) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play text-xs"></i> Start';
+        if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+            showToast("🚫 Camera permission denied. Tap the camera icon in the address bar and allow access.", "error", 7000);
+        } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+            showToast("📷 No camera found on this device.", "error", 6000);
+        } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
+            showToast("📷 Camera is busy — close other apps using the camera and retry.", "error", 5000);
+        } else if (err.name === "OverconstrainedError") {
+            // Retry without constraints
+            try {
+                const stream2 = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                _mediaStream = stream2;
+                document.getElementById("camera-feed").srcObject = stream2;
+                updateCameraUI(true);
+                showToast("Camera started", "success");
+            } catch(e2) {
+                showToast("Could not start camera: " + (e2.message || e2.name), "error", 5000);
+            }
+        } else {
+            showToast("Camera error: " + (err.message || err.name), "error", 5000);
+        }
+    }
 });
 
 document.getElementById("btn-stop-camera").addEventListener("click", () => {
@@ -121,23 +143,23 @@ function _doCaptureAndDetect() {
     if (btnCapture)    btnCapture.disabled    = true;
     if (btnCaptureMob) btnCaptureMob.disabled = true;
 
-    // Snapshot the live video frame into a hidden canvas
+    // Draw current video frame onto hidden canvas
     const video  = document.getElementById("camera-feed");
     const canvas = document.getElementById("camera-canvas");
     canvas.width  = video.videoWidth  || 640;
     canvas.height = video.videoHeight || 480;
     canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-    const imageData = canvas.toDataURL("image/jpeg", 0.85);
 
     const resultArea   = document.getElementById("result-area");
     const overlayLabel = document.getElementById("overlay-label");
     startScanUI();
 
-    fetch("/api/capture_frame", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image_data: imageData })
-    })
+    // Convert canvas to JPEG Blob, then send as FormData (binary — no base64 overhead)
+    canvas.toBlob(blob => {
+        const formData = new FormData();
+        formData.append("image", blob, "capture.jpg");
+
+        fetch("/api/capture", { method: "POST", body: formData })
         .then(r => r.json())
         .then(data => {
             stopScanUI();
@@ -244,6 +266,7 @@ function _doCaptureAndDetect() {
             if (btnC)  btnC.disabled  = false;
             if (btnCM) btnCM.disabled = false;
         });
+    }, "image/jpeg", 0.85); // end canvas.toBlob
 }
 
 // Wire both capture buttons to the shared function
@@ -361,32 +384,30 @@ function fsCapture() {
     const btn = document.getElementById("fs-capture-btn");
     if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
 
-    // Snapshot from fullscreen video
     const fsVideo = document.getElementById("fs-video");
     const canvas  = document.getElementById("camera-canvas");
-    if (fsVideo) {
-        canvas.width  = fsVideo.videoWidth  || 640;
-        canvas.height = fsVideo.videoHeight || 480;
+    if (fsVideo && fsVideo.videoWidth) {
+        canvas.width  = fsVideo.videoWidth;
+        canvas.height = fsVideo.videoHeight;
         canvas.getContext("2d").drawImage(fsVideo, 0, 0, canvas.width, canvas.height);
     }
-    const imageData = canvas.toDataURL("image/jpeg", 0.85);
 
     closeFullscreenScan();
 
-    fetch("/api/capture_frame", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image_data: imageData })
-    })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success && data.items?.length) {
-                showToast(`✅ Detected ${data.total_items} item(s)!`, "success");
-                updateCartCount();
-                _doCaptureAndDetect && updateCartCount();
-            } else {
-                showToast("No products detected", "warning");
-            }
-        })
-        .catch(() => { showToast("Capture failed", "error"); });
+    canvas.toBlob(blob => {
+        const formData = new FormData();
+        formData.append("image", blob, "capture.jpg");
+
+        fetch("/api/capture", { method: "POST", body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success && data.items?.length) {
+                    showToast(`✅ Detected ${data.total_items} item(s)!`, "success");
+                    updateCartCount();
+                } else {
+                    showToast("No products detected", "warning");
+                }
+            })
+            .catch(() => showToast("Capture failed", "error"));
+    }, "image/jpeg", 0.85);
 }

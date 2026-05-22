@@ -17,15 +17,31 @@ detection_bp = Blueprint("detection", __name__)
 
 @detection_bp.route("/api/capture", methods=["POST"])
 def api_capture():
-    """Capture image, detect products, return result with multi-item support."""
-    image_path, timestamp = capture_image()
-    if image_path is None:
-        return jsonify({"success": False, "error": "Failed to capture image. Check camera."}), 500
+    """
+    Capture and detect products.
+    Accepts either:
+      - multipart/form-data with field 'image' (browser camera upload)
+      - plain POST with no body (legacy server-side OpenCV, local dev only)
+    """
+    # ── Browser camera upload (FormData) ──────────────────────────────────────
+    if "image" in request.files:
+        file = request.files["image"]
+        os.makedirs(Config.CAPTURED_IMAGES_DIR, exist_ok=True)
+        timestamp  = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename   = f"capture_{timestamp}.jpg"
+        image_path = os.path.join(Config.CAPTURED_IMAGES_DIR, filename)
+        file.save(image_path)
+
+    # ── Legacy: server-side OpenCV (local dev only) ────────────────────────────
+    else:
+        image_path, timestamp = capture_image()
+        if image_path is None:
+            return jsonify({"success": False,
+                            "error": "No camera image received. Use browser camera."}), 400
 
     image_id = save_image_metadata(image_path, timestamp)
-    result = call_gemini_api(image_path)
+    result   = call_gemini_api(image_path)
 
-    # Handle error from Gemini
     if result.get("error"):
         return jsonify({
             "success": False,
@@ -33,36 +49,31 @@ def api_capture():
             "image_path": os.path.basename(image_path),
         }), 500
 
-    items = result.get("items", [])
-    scene = result.get("scene", "")
+    items       = result.get("items", [])
+    scene       = result.get("scene", "")
     description = result.get("description", "")
-    subtotal = result.get("subtotal", 0)
+    subtotal    = result.get("subtotal", 0)
 
-    # Save each detected item to DB
-    detection_ids = []
     for item in items:
-        name = item.get("name", "Unknown")
+        name     = item.get("name", "Unknown")
         category = item.get("category", "Unknown")
-        det_id = save_detection(image_id, name, category)
+        det_id   = save_detection(image_id, name, category)
         item["detection_id"] = det_id
-        detection_ids.append(det_id)
 
-    rel_path = os.path.basename(image_path)
-
-    # Post-scan recommendations
+    rel_path    = os.path.basename(image_path)
     suggestions = get_scan_suggestions([i.get("name", "") for i in items]) if items else []
 
     return jsonify({
-        "success": True,
-        "image_id": image_id,
-        "image_path": rel_path,
-        "items": items,
-        "scene": scene,
+        "success":     True,
+        "image_id":    image_id,
+        "image_path":  rel_path,
+        "items":       items,
+        "scene":       scene,
         "description": description,
         "total_items": len(items),
-        "subtotal": subtotal,
-        "currency": "INR",
-        "timestamp": timestamp,
+        "subtotal":    subtotal,
+        "currency":    "INR",
+        "timestamp":   timestamp,
         "suggestions": suggestions,
     })
 
