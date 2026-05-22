@@ -57,7 +57,7 @@ class Config:
     CAMERA_INDEX = 0
 
     # Email — Resend API (HTTPS, works on Render free tier)
-    RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
+    RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "").strip()
 
     # Legacy SMTP settings (kept for local testing only)
     SMTP_SERVER = "smtp.gmail.com"
