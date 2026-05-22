@@ -294,6 +294,9 @@ def send_payment_email(user_email, transaction_id, timestamp, items, total_amoun
     """
     def _send():
         try:
+            if not Config.EMAIL_USER or not Config.EMAIL_PASS:
+                print("[EMAIL] Skipped — EMAIL_USER or EMAIL_PASS not configured (set env vars in Render Dashboard)")
+                return
             print(f"[EMAIL] Starting send to {user_email}...")
             msg = MIMEMultipart("alternative")
             msg["Subject"] = f"✅ Payment Receipt — ₹{total_amount:.2f} | RetailScan"

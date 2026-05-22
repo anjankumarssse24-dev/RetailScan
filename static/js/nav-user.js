@@ -96,6 +96,10 @@ function loadUserInfo() {
             setText("dropdown-email-mob", user.email || "");
             setHTML("dropdown-tier-badge-mob",    tierHTML);
             setHTML("dropdown-reward-points-mob", pointsHTML);
+
+            // Store globally so other scripts (e.g. payment) can use it
+            window._currentUserEmail = user.email || "";
+            window._currentUserName  = user.name  || "";
         })
         .catch(() => {});
 }

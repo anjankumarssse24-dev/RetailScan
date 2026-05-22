@@ -44,12 +44,15 @@ def api_checkout():
     )
 
     # ── Send email receipt ────────────────────────────────
-    print(f"[CHECKOUT] User session: {user}")
-    if user and user.get("email"):
+    # Prefer session email; fall back to email sent from frontend
+    body_data  = request.get_json(silent=True) or {}
+    user_email = (user.get("email") if user else None) or body_data.get("user_email", "")
+    print(f"[CHECKOUT] email resolved: {user_email!r} (session user: {bool(user)})")
+    if user_email:
         items = json.loads(result.get("items_json", "[]")) if "items_json" in result else []
-        print(f"[CHECKOUT] Sending email to {user['email']} with {len(items)} items")
+        print(f"[CHECKOUT] Sending email to {user_email} with {len(items)} items")
         send_payment_email(
-            user_email=user["email"],
+            user_email=user_email,
             transaction_id=result["transaction_id"],
             timestamp=result["timestamp"],
             items=items,
@@ -57,7 +60,7 @@ def api_checkout():
             analytics=analytics,
         )
     else:
-        print("[CHECKOUT] No email sent — user missing or no email")
+        print("[CHECKOUT] No email sent — no email in session or request body")
 
     return jsonify({"success": True, **result})
 

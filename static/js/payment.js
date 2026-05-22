@@ -131,7 +131,11 @@ function verifyPin() {
     // Call API after 3 seconds (realistic bank processing delay)
     setTimeout(() => {
         clearInterval(msgTimer);
-        fetch("/api/checkout", { method: "POST" })
+        fetch("/api/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_email: window._currentUserEmail || "" })
+        })
             .then(r => r.json())
             .then(data => {
                 if (!data.success) {
