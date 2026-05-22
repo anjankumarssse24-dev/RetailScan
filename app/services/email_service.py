@@ -314,12 +314,15 @@ def send_payment_email(user_email, transaction_id, timestamp, items, total_amoun
                                        analytics=analytics)
             msg.attach(MIMEText(html, "html"))
 
-            print(f"[EMAIL] Connecting to {Config.SMTP_SERVER}:{Config.SMTP_PORT} (SSL)...")
-            ctx = ssl.create_default_context()
-            with smtplib.SMTP_SSL(Config.SMTP_SERVER, Config.SMTP_PORT, timeout=30, context=ctx) as server:
+            print(f"[EMAIL] Connecting to {Config.SMTP_SERVER}:{Config.SMTP_PORT} (STARTTLS)...")
+            with smtplib.SMTP(Config.SMTP_SERVER, Config.SMTP_PORT, timeout=30) as server:
+                server.ehlo()
+                server.starttls(context=ssl.create_default_context())
+                server.ehlo()
                 print(f"[EMAIL] Logging in as {Config.EMAIL_USER}...")
                 server.login(Config.EMAIL_USER, Config.EMAIL_PASS)
                 print(f"[EMAIL] Sending to {user_email}...")
+                server.sendmail(Config.EMAIL_USER, user_email, msg.as_string())
                 server.sendmail(Config.EMAIL_USER, user_email, msg.as_string())
 
             print(f"[EMAIL] Receipt sent to {user_email} for {transaction_id}")

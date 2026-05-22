@@ -58,9 +58,9 @@ class Config:
 
     # SMTP Email settings
     SMTP_SERVER = "smtp.gmail.com"
-    SMTP_PORT = 465
+    SMTP_PORT = 587
     EMAIL_USER = os.environ.get("EMAIL_USER", "")
-    EMAIL_PASS = os.environ.get("EMAIL_PASS", "")
+    EMAIL_PASS = os.environ.get("EMAIL_PASS", "").replace(" ", "")  # strip spaces from App Password
 
     # Admin email — any user logging in with this email gets admin role automatically
     ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")
