@@ -58,7 +58,6 @@ document.getElementById("btn-start-camera").addEventListener("click", async () =
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i> Starting...';
 
-    // Check browser support first
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-play text-xs"></i> Start';
@@ -66,42 +65,50 @@ document.getElementById("btn-start-camera").addEventListener("click", async () =
         return;
     }
 
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } },
-            audio: false
-        });
-        _mediaStream = stream;
-        const feed = document.getElementById("camera-feed");
-        feed.srcObject = stream;
-        // Explicitly play — required on some mobile browsers
-        feed.onloadedmetadata = () => feed.play().catch(() => {});
-        updateCameraUI(true);
-        showToast("Camera started", "success");
-    } catch (err) {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fas fa-play text-xs"></i> Start';
-        if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
-            showToast("🚫 Camera permission denied. Tap the camera icon in the address bar and allow access.", "error", 7000);
-        } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
-            showToast("📷 No camera found on this device.", "error", 6000);
-        } else if (err.name === "NotReadableError" || err.name === "TrackStartError") {
-            showToast("📷 Camera is busy — close other apps using the camera and retry.", "error", 5000);
-        } else if (err.name === "OverconstrainedError") {
-            // Retry without constraints
-            try {
-                const stream2 = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-                _mediaStream = stream2;
-                document.getElementById("camera-feed").srcObject = stream2;
-                updateCameraUI(true);
-                showToast("Camera started", "success");
-            } catch(e2) {
-                showToast("Could not start camera: " + (e2.message || e2.name), "error", 5000);
-            }
-        } else {
-            showToast("Camera error: " + (err.message || err.name), "error", 5000);
+    // Try constraints from most specific → least specific (robust mobile fallback)
+    const constraintSets = [
+        { video: { facingMode: { ideal: "environment" }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+        { video: { facingMode: "environment" }, audio: false },
+        { video: { facingMode: { ideal: "environment" } }, audio: false },
+        { video: true, audio: false }
+    ];
+
+    let stream = null, lastErr = null;
+    for (const constraints of constraintSets) {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            break;
+        } catch (err) {
+            lastErr = err;
+            // Don't retry on hard stops — only retry on constraint issues
+            if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") break;
+            if (err.name === "NotFoundError"   || err.name === "DevicesNotFoundError")  break;
+            if (err.name === "NotReadableError"|| err.name === "TrackStartError")       break;
         }
     }
+
+    if (!stream) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-play text-xs"></i> Start';
+        const n = lastErr ? lastErr.name : "";
+        if (n === "NotAllowedError" || n === "PermissionDeniedError")
+            showToast("🚫 Camera permission denied. Allow camera access in your browser settings.", "error", 7000);
+        else if (n === "NotFoundError" || n === "DevicesNotFoundError")
+            showToast("📷 No camera found on this device.", "error", 6000);
+        else if (n === "NotReadableError" || n === "TrackStartError")
+            showToast("📷 Camera is busy — close other apps using the camera and retry.", "error", 5000);
+        else
+            showToast("Camera error: " + (lastErr ? (lastErr.message || lastErr.name) : "unknown"), "error", 5000);
+        return;
+    }
+
+    _mediaStream = stream;
+    const feed = document.getElementById("camera-feed");
+    feed.srcObject = stream;
+    // await play() instead of onloadedmetadata to avoid race condition on mobile
+    try { await feed.play(); } catch(e) { /* blocked by autoplay policy — stream still active */ }
+    updateCameraUI(true);
+    showToast("Camera started", "success");
 });
 
 document.getElementById("btn-stop-camera").addEventListener("click", () => {
