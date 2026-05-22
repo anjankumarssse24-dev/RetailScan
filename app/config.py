@@ -61,3 +61,6 @@ class Config:
     SMTP_PORT = 465
     EMAIL_USER = os.environ.get("EMAIL_USER", "")
     EMAIL_PASS = os.environ.get("EMAIL_PASS", "")
+
+    # Admin email — any user logging in with this email gets admin role automatically
+    ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")

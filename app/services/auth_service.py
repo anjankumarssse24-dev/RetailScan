@@ -91,7 +91,8 @@ def verify_firebase_token(id_token):
 
 def login_user(user_info):
     """Persist user to DB, then store enriched profile in Flask session."""
-    from app.services.db_service import upsert_user
+    from app.services.db_service import upsert_user, set_user_role
+    from app.config import Config
     created_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
     db_user = upsert_user(
         firebase_uid=user_info["uid"],
@@ -99,6 +100,13 @@ def login_user(user_info):
         email=user_info["email"],
         created_at=created_at,
     )
+
+    # Auto-promote if this email is the designated admin email
+    admin_email = Config.ADMIN_EMAIL.strip().lower()
+    if admin_email and user_info["email"].strip().lower() == admin_email:
+        if db_user and db_user.get("role") != "admin":
+            set_user_role(user_info["uid"], "admin")
+            db_user["role"] = "admin"
 
     session["user"] = {
         "uid": user_info["uid"],
