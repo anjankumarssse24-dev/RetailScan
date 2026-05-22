@@ -62,7 +62,7 @@ def api_checkout():
     else:
         print("[CHECKOUT] No email sent — no email in session or request body")
 
-    return jsonify({"success": True, **result})
+    return jsonify({"success": True, "email_queued_to": user_email or None, **result})
 
 
 @payment_bp.route("/api/wallet", methods=["GET"])

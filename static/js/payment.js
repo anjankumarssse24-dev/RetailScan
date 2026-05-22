@@ -167,6 +167,7 @@ function verifyPin() {
                     <div class="receipt-row"><span style="color:var(--text-secondary);">Balance Left</span><span style="color:var(--text-primary);">₹${data.balance_after.toFixed(2)}</span></div>
                     ${pointsRow}
                     <div class="receipt-row"><span style="color:var(--text-secondary);">Date</span><span style="color:var(--text-secondary);font-size:.75rem;">${data.timestamp}</span></div>
+                    ${data.email_queued_to ? `<div class="receipt-row"><span style="color:var(--text-secondary);">Receipt sent to</span><span style="color:#10b981;font-size:.75rem;">${data.email_queued_to}</span></div>` : `<div class="receipt-row"><span style="color:var(--text-secondary);">Receipt email</span><span style="color:#ef4444;font-size:.75rem;">Not sent (no email)</span></div>`}
                 `;
 
                 // Store data for the main page success view
