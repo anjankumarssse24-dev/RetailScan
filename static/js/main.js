@@ -78,6 +78,11 @@ document.getElementById("btn-start-camera").addEventListener("click", async () =
         feed.onloadedmetadata = () => feed.play().catch(() => {});
         updateCameraUI(true);
         showToast("Camera started", "success");
+        // Scroll so Capture button is visible without needing to scroll manually
+        setTimeout(() => {
+            const captureBtn = document.getElementById("btn-capture");
+            if (captureBtn) captureBtn.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 350);
     } catch (err) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-play text-xs"></i> Start';
@@ -95,6 +100,10 @@ document.getElementById("btn-start-camera").addEventListener("click", async () =
                 document.getElementById("camera-feed").srcObject = stream2;
                 updateCameraUI(true);
                 showToast("Camera started", "success");
+                setTimeout(() => {
+                    const captureBtn = document.getElementById("btn-capture");
+                    if (captureBtn) captureBtn.scrollIntoView({ behavior: "smooth", block: "nearest" });
+                }, 350);
             } catch(e2) {
                 showToast("Could not start camera: " + (e2.message || e2.name), "error", 5000);
             }
@@ -207,41 +216,50 @@ function _doCaptureAndDetect() {
 
             let itemsHTML = items.map((item, i) => `
                 <div class="detected-item-card" style="animation-delay:${i * 0.1}s">
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-xs font-bold px-2 py-1 rounded-md bg-cyber/10 text-cyber">#${i + 1}</span>
-                        <span class="text-xs font-semibold text-neon-green">${Math.round((item.confidence || 0.9) * 100)}% match</span>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="rs-badge rs-badge-primary">#${i + 1}</span>
+                        <span class="fw-semibold" style="color:var(--success);font-size:.78rem;">${Math.round((item.confidence || 0.9) * 100)}% match</span>
                     </div>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between"><span class="text-gray-400"><i class="fas fa-box mr-1"></i>Product</span><span class="text-white font-medium">${item.name}</span></div>
-                        <div class="flex justify-between"><span class="text-gray-400"><i class="fas fa-tag mr-1"></i>Category</span><span class="text-gray-300">${item.category}</span></div>
-                        <div class="flex justify-between items-center rounded-lg bg-neon-green/5 border border-neon-green/10 px-3 py-2 -mx-1">
-                            <span class="text-gray-400"><i class="fas fa-indian-rupee-sign mr-1"></i>Price</span>
-                            <span class="text-xl font-bold text-neon-green">₹${item.unit_price}</span>
+                    <div class="d-flex flex-column gap-2" style="font-size:.9rem;">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span style="color:var(--text-secondary);"><i class="fas fa-box me-1"></i>Product</span>
+                            <span class="fw-semibold" style="color:var(--text-primary);">${item.name}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span style="color:var(--text-secondary);"><i class="fas fa-tag me-1"></i>Category</span>
+                            <span style="color:var(--text-secondary);">${item.category}</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center rounded-3 px-3 py-2"
+                             style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);">
+                            <span style="color:var(--text-secondary);"><i class="fas fa-indian-rupee-sign me-1"></i>Price</span>
+                            <span class="fw-bold" style="color:var(--success);font-size:1.15rem;">₹${item.unit_price}</span>
                         </div>
                     </div>
-                    <button class="btn-glow bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 w-full justify-center mt-3 py-2.5 text-sm"
+                    <button class="btn-glow w-100 justify-content-center mt-3"
+                            style="background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 4px 12px rgba(16,185,129,.35);font-size:.88rem;"
                             onclick="addToCart(${item.detection_id}, '${item.name.replace(/'/g, "\\'")}', '${item.category.replace(/'/g, "\\'")}', ${item.unit_price})">
-                        <i class="fas fa-cart-plus"></i> Add — ₹${item.unit_price}
+                        <i class="fas fa-cart-plus"></i> ${item.name} — ₹${item.unit_price}
                     </button>
                 </div>`).join("");
 
             resultArea.innerHTML = `
-                <div class="w-full space-y-4">
-                    <img src="/captured_images/${data.image_path}" class="w-full rounded-xl border border-white/10" alt="Captured">
-                    <div class="rounded-xl bg-neon-green/5 border border-neon-green/15 p-4">
-                        <div class="flex items-center gap-2 text-neon-green font-bold mb-1">
+                <div class="w-100">
+                    <img src="/captured_images/${data.image_path}" class="w-100 rounded-3 mb-3" style="border:1px solid rgba(99,102,241,.12);max-height:220px;object-fit:cover;" alt="Captured">
+                    <div class="rounded-3 p-3 mb-3" style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);">
+                        <div class="d-flex align-items-center gap-2 fw-bold mb-2" style="color:var(--success);">
                             <i class="fas fa-check-circle"></i> ${totalItems} Product${totalItems > 1 ? 's' : ''} Detected
                         </div>
-                        <div class="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
-                            <span class="text-gray-400 text-sm"><i class="fas fa-clock mr-1"></i>${data.timestamp}</span>
-                            <span class="text-xl font-bold text-neon-green">₹${subtotal}</span>
+                        <div class="d-flex justify-content-between align-items-center pt-2" style="border-top:1px solid rgba(16,185,129,.15);">
+                            <span style="color:var(--text-secondary);font-size:.82rem;"><i class="fas fa-clock me-1"></i>${data.timestamp}</span>
+                            <span class="fw-bold" style="color:var(--success);font-size:1.2rem;">₹${subtotal}</span>
                         </div>
                     </div>
-                    <div class="space-y-3">${itemsHTML}</div>
+                    <div class="d-flex flex-column gap-3">${itemsHTML}</div>
                     ${items.length > 0 ? `
-                    <button class="btn-glow-primary bg-gradient-to-r from-cyber-dim to-cyber text-dark-900 w-full justify-center py-3 text-base font-bold"
+                    <button class="btn-glow-primary w-100 justify-content-center mt-3 py-3"
+                            style="background:linear-gradient(135deg,#6366f1,#8b5cf6);box-shadow:0 6px 20px rgba(99,102,241,.4);font-size:1rem;font-weight:700;"
                             onclick="addAllToCart(${JSON.stringify(items).replace(/"/g, '&quot;')})">
-                        <i class="fas fa-cart-arrow-down"></i> Add All — ₹${subtotal}
+                        <i class="fas fa-cart-arrow-down me-2"></i>Add All to Cart — ₹${subtotal}
                     </button>` : ''}
                 </div>`;
 
