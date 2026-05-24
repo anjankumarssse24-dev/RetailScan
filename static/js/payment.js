@@ -56,7 +56,6 @@ function openModal() {
     enteredPin = "";
     updatePinDots();
     document.getElementById("pin-error").textContent = "";
-    document.getElementById("upi-modal-amount").textContent = `₹${paymentAmount.toFixed(2)}`;
     const methodAmtEl = document.getElementById("method-amount");
     if (methodAmtEl) methodAmtEl.textContent = `₹${paymentAmount.toFixed(2)}`;
 
@@ -79,15 +78,46 @@ function closeModal() {
     setTimeout(() => overlay.classList.add("hidden"), 300);
 }
 
-function selectApp(appName) {
+function selectApp(appName, brandColor) {
     selectedPayApp = appName;
-    const lbl = document.getElementById("upi-pin-app-label");
-    if (lbl) lbl.textContent = appName;
-    document.getElementById("upi-step-method").classList.add("hidden");
-    document.getElementById("upi-step-pin").classList.remove("hidden");
     enteredPin = "";
     updatePinDots();
     document.getElementById("pin-error").textContent = "";
+
+    // Build branded PIN header
+    const headerEl = document.getElementById("pin-app-header");
+    if (headerEl) {
+        const appIcons = {
+            "Google Pay": `<div style="font-size:1.25rem;font-weight:900;line-height:1;margin-bottom:6px;">
+                              <span style="color:#4285F4">G</span><span style="color:#EA4335">o</span><span style="color:#FBBC05">o</span><span style="color:#4285F4">g</span><span style="color:#34A853">l</span><span style="color:#EA4335">e</span>
+                              <span style="color:#5F6368;margin-left:4px;font-size:1.1rem;">Pay</span>
+                           </div>`,
+            "PhonePe": `<div style="width:46px;height:46px;border-radius:14px;background:#5F259F;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;">
+                          <svg width="28" height="28" viewBox="0 0 40 40"><text x="7" y="29" font-size="28" font-weight="900" fill="white" font-family="Arial">P</text><circle cx="31" cy="10" r="5" fill="#CBB9F5"/></svg>
+                        </div>
+                        <div style="font-size:.95rem;font-weight:700;color:#5F259F;">PhonePe</div>`,
+            "Paytm": `<div style="width:46px;height:46px;border-radius:14px;background:#00BAF2;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;">
+                        <span style="color:#fff;font-weight:900;font-size:1rem;font-family:Arial;">P</span><span style="color:#002970;font-weight:900;font-size:.72rem;font-family:Arial;">ay</span>
+                      </div>
+                      <div style="font-size:.95rem;font-weight:700;color:#00BAF2;">Paytm</div>`,
+            "BHIM UPI": `<div style="width:46px;height:46px;border-radius:14px;background:linear-gradient(135deg,#FF6B35,#00529B);display:flex;align-items:center;justify-content:center;margin:0 auto 6px;">
+                           <span style="color:#fff;font-weight:900;font-size:.72rem;font-family:Arial;letter-spacing:-.5px;">BHIM</span>
+                         </div>
+                         <div style="font-size:.95rem;font-weight:700;color:#00529B;">BHIM UPI</div>`
+        };
+        const icon = appIcons[appName] || `<div style="font-weight:700;color:var(--primary);">${appName}</div>`;
+        headerEl.innerHTML = `
+            <div class="text-center">${icon}</div>
+            <p class="mb-0 small mt-2" style="color:var(--text-secondary);">Enter UPI PIN to pay</p>
+            <p class="fw-black mb-0 mt-1" style="font-size:clamp(1.6rem,6vw,2.2rem);color:var(--text-primary);">&#8377;${paymentAmount.toFixed(2)}</p>
+            <p class="mb-0" style="font-size:.75rem;color:var(--text-secondary);">to <span class="font-monospace fw-semibold" style="color:var(--primary);">retailscan@okaxis</span></p>
+            <button class="border-0 bg-transparent p-0 mt-2" style="color:var(--text-secondary);font-size:.75rem;cursor:pointer;" onclick="backToMethodStep()">
+                <i class="fas fa-chevron-left me-1"></i>Change app
+            </button>`;
+    }
+
+    document.getElementById("upi-step-method").classList.add("hidden");
+    document.getElementById("upi-step-pin").classList.remove("hidden");
 }
 
 function backToMethodStep() {
@@ -126,7 +156,21 @@ function removeDigit() {
 }
 
 function verifyPin() {
-    // Accept any 4-digit PIN (bank validates against actual UPI PIN server-side)
+    if (enteredPin !== CORRECT_PIN) {
+        const pinError = document.getElementById("pin-error");
+        if (pinError) pinError.textContent = "Incorrect UPI PIN. Please try again.";
+        const dots = document.querySelectorAll(".pin-dot");
+        dots.forEach(d => d.classList.add("error"));
+        const dotsRow = document.getElementById("pin-dots-row");
+        if (dotsRow) { dotsRow.classList.add("shake"); setTimeout(() => dotsRow.classList.remove("shake"), 400); }
+        setTimeout(() => {
+            dots.forEach(d => d.classList.remove("error"));
+            enteredPin = "";
+            updatePinDots();
+        }, 650);
+        return;
+    }
+    // Correct PIN — proceed
     document.getElementById("upi-step-pin").classList.add("hidden");
     document.getElementById("upi-step-processing").classList.remove("hidden");
 

@@ -303,93 +303,140 @@
     <div id="upi-modal-overlay" class="upi-overlay hidden">
         <div id="upi-modal" class="upi-modal">
 
-            <!-- Step 0: Choose Payment App -->
+            <!-- Drag handle -->
+            <div class="upi-drag-handle"></div>
+
+            <!-- ══ Step 0: Choose Payment App ══ -->
             <div id="upi-step-method" class="upi-step">
-                <div class="text-center mb-4">
-                    <p class="fw-bold mb-1" style="color:var(--text-primary);font-size:1.05rem;">Choose Payment App</p>
-                    <p class="small mb-1" style="color:var(--text-secondary);">Paying to <strong class="font-monospace" style="color:var(--primary);">retailscan@okaxis</strong></p>
-                    <p id="method-amount" class="fw-black mb-0" style="font-size:clamp(1.5rem,7vw,2rem);color:var(--text-primary);">&#8377;0.00</p>
+                <!-- Amount header -->
+                <div class="text-center pt-2 pb-3" style="border-bottom:1px solid #f3f4f6;margin-bottom:16px;">
+                    <p class="mb-1 small fw-semibold" style="color:var(--text-secondary);letter-spacing:.5px;">Pay to</p>
+                    <p class="mb-1 fw-bold font-monospace" style="color:var(--primary);font-size:.88rem;">retailscan@okaxis</p>
+                    <p id="method-amount" class="mb-0 fw-black" style="font-size:clamp(1.8rem,7vw,2.4rem);color:var(--text-primary);">&#8377;0.00</p>
                 </div>
-                <div class="row g-2 mb-3">
-                    <div class="col-6">
-                        <button class="w-100 d-flex align-items-center gap-2 rounded-3 border-0 p-3 fw-semibold" style="background:#e8f0fe;color:#1a73e8;cursor:pointer;font-size:.88rem;" onclick="selectApp('Google Pay')">
-                            <span style="width:28px;height:28px;border-radius:6px;background:#1a73e8;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0;">G</span> Google Pay
-                        </button>
+
+                <p class="mb-3 fw-semibold small" style="color:var(--text-secondary);">Choose payment app</p>
+
+                <!-- Google Pay -->
+                <button class="upi-app-row" onclick="selectApp('Google Pay','#1a73e8')">
+                    <div class="upi-app-row-info">
+                        <div class="upi-app-icon" style="background:#f8f9fa;border:1.5px solid #e8eaed;">
+                            <span style="font-size:1.05rem;font-weight:900;line-height:1;letter-spacing:-.5px;">
+                                <span style="color:#4285F4">G</span><span style="color:#EA4335">o</span><span style="color:#FBBC05">o</span><span style="color:#4285F4">g</span><span style="color:#34A853">l</span><span style="color:#EA4335">e</span>
+                            </span>
+                        </div>
+                        <div class="text-start">
+                            <p class="mb-0 fw-semibold" style="color:var(--text-primary);font-size:.9rem;">Google Pay</p>
+                            <p class="mb-0" style="color:var(--text-secondary);font-size:.75rem;">UPI &middot; HDFC Bank &bull; ••••1234</p>
+                        </div>
                     </div>
-                    <div class="col-6">
-                        <button class="w-100 d-flex align-items-center gap-2 rounded-3 border-0 p-3 fw-semibold" style="background:#f3e5f5;color:#5f259f;cursor:pointer;font-size:.88rem;" onclick="selectApp('PhonePe')">
-                            <span style="width:28px;height:28px;border-radius:6px;background:#5f259f;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.75rem;flex-shrink:0;">&#9425;</span> PhonePe
-                        </button>
-                    </div>
-                    <div class="col-6">
-                        <button class="w-100 d-flex align-items-center gap-2 rounded-3 border-0 p-3 fw-semibold" style="background:#e3f2fd;color:#0081cf;cursor:pointer;font-size:.88rem;" onclick="selectApp('Paytm')">
-                            <span style="width:28px;height:28px;border-radius:6px;background:#00b9f5;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0;">&#8377;</span> Paytm
-                        </button>
-                    </div>
-                    <div class="col-6">
-                        <button class="w-100 d-flex align-items-center gap-2 rounded-3 border-0 p-3 fw-semibold" style="background:#fff3e0;color:#e65100;cursor:pointer;font-size:.88rem;" onclick="selectApp('BHIM UPI')">
-                            <span style="width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#ff6b35,#e65100);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;flex-shrink:0;">B</span> BHIM UPI
-                        </button>
-                    </div>
-                </div>
-                <div class="d-flex align-items-center gap-2 mb-3">
-                    <div style="flex:1;height:1px;background:rgba(99,102,241,.12);"></div>
-                    <span style="color:var(--text-secondary);font-size:.75rem;">or</span>
-                    <div style="flex:1;height:1px;background:rgba(99,102,241,.12);"></div>
-                </div>
-                <button class="btn-glow w-100 justify-content-center" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);" onclick="selectApp('UPI ID')">
-                    <i class="fas fa-mobile-screen-button me-2"></i>Enter UPI PIN manually
+                    <i class="fas fa-chevron-right" style="color:#d1d5db;font-size:.75rem;"></i>
                 </button>
+
+                <!-- PhonePe -->
+                <button class="upi-app-row" onclick="selectApp('PhonePe','#5F259F')">
+                    <div class="upi-app-row-info">
+                        <div class="upi-app-icon" style="background:#5F259F;">
+                            <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+                                <text x="7" y="28" font-size="26" font-weight="900" fill="white" font-family="Arial">P</text>
+                                <circle cx="29" cy="10" r="5" fill="#CBB9F5"/>
+                            </svg>
+                        </div>
+                        <div class="text-start">
+                            <p class="mb-0 fw-semibold" style="color:var(--text-primary);font-size:.9rem;">PhonePe</p>
+                            <p class="mb-0" style="color:var(--text-secondary);font-size:.75rem;">UPI &middot; SBI Bank &bull; ••••5678</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color:#d1d5db;font-size:.75rem;"></i>
+                </button>
+
+                <!-- Paytm -->
+                <button class="upi-app-row" onclick="selectApp('Paytm','#00BAF2')">
+                    <div class="upi-app-row-info">
+                        <div class="upi-app-icon" style="background:#00BAF2;">
+                            <span style="color:#fff;font-weight:900;font-size:1.05rem;font-family:Arial;">P</span>
+                            <span style="color:#002970;font-weight:900;font-size:.75rem;font-family:Arial;margin-left:-3px;">ay</span>
+                        </div>
+                        <div class="text-start">
+                            <p class="mb-0 fw-semibold" style="color:var(--text-primary);font-size:.9rem;">Paytm</p>
+                            <p class="mb-0" style="color:var(--text-secondary);font-size:.75rem;">UPI &middot; Axis Bank &bull; ••••9012</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color:#d1d5db;font-size:.75rem;"></i>
+                </button>
+
+                <!-- BHIM UPI -->
+                <button class="upi-app-row" onclick="selectApp('BHIM UPI','#00529B')">
+                    <div class="upi-app-row-info">
+                        <div class="upi-app-icon" style="background:linear-gradient(135deg,#FF6B35,#00529B);">
+                            <span style="color:#fff;font-weight:900;font-size:.78rem;font-family:Arial;letter-spacing:-.5px;">BHIM</span>
+                        </div>
+                        <div class="text-start">
+                            <p class="mb-0 fw-semibold" style="color:var(--text-primary);font-size:.9rem;">BHIM UPI</p>
+                            <p class="mb-0" style="color:var(--text-secondary);font-size:.75rem;">UPI &middot; ICICI Bank &bull; ••••3456</p>
+                        </div>
+                    </div>
+                    <i class="fas fa-chevron-right" style="color:#d1d5db;font-size:.75rem;"></i>
+                </button>
+
+                <!-- NPCI footer -->
+                <div class="text-center mt-4 pt-2" style="border-top:1px solid #f3f4f6;">
+                    <div class="d-flex align-items-center justify-content-center gap-2 mb-1">
+                        <svg width="20" height="12" viewBox="0 0 60 36" fill="none"><rect width="60" height="36" rx="4" fill="#002970"/><text x="4" y="26" font-size="18" font-weight="900" fill="#F97316" font-family="Arial">UPI</text></svg>
+                        <span style="font-size:.7rem;color:#9ca3af;">Secured by NPCI</span>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" fill="#34A853"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" fill="none"/></svg>
+                        <span style="font-size:.7rem;color:#9ca3af;">256-bit SSL</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- Step 1: PIN entry -->
-            <div id="upi-step-pin" class="upi-step hidden">
-                <div class="text-center mb-4">
-                    <div class="mx-auto mb-3 d-flex align-items-center justify-content-center"
-                         style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 6px 18px rgba(16,185,129,.35);">
-                        <i class="fas fa-shield-halved fs-5 text-white"></i>
-                    </div>
-                    <h3 class="fw-bold mb-1" style="color:var(--text-primary);" id="upi-pin-app-label">UPI Payment</h3>
-                    <p class="mb-1 small" style="color:var(--text-secondary);">
-                        Paying to <strong class="font-monospace" style="color:var(--primary);">retailscan@okaxis</strong>
-                    </p>
-                    <button class="border-0 bg-transparent p-0" style="color:var(--text-secondary);font-size:.75rem;cursor:pointer;" onclick="backToMethodStep()"><i class="fas fa-chevron-left me-1"></i>Change app</button>
+            <!-- ══ Step 1: PIN Entry ══ -->
+            <div id="upi-step-pin" class="upi-step hidden" style="padding:0 0 24px;">
+                <!-- App-branded header -->
+                <div id="pin-app-header" class="upi-pin-header">
+                    <!-- Filled dynamically by selectApp() -->
                 </div>
-                <div class="text-center mb-4">
-                    <p class="mb-1 small text-uppercase fw-semibold" style="color:var(--text-secondary);letter-spacing:1px;">Amount</p>
-                    <p id="upi-modal-amount" class="mb-0 fw-black" style="font-size:clamp(1.5rem,7vw,2.2rem);color:var(--text-primary);">&#8377;0.00</p>
-                </div>
-                <div class="d-flex justify-content-center gap-3 mb-2">
+
+                <!-- PIN dots -->
+                <div class="d-flex justify-content-center gap-4 mb-1 px-4" id="pin-dots-row">
                     <div class="pin-dot" data-index="0"></div>
                     <div class="pin-dot" data-index="1"></div>
                     <div class="pin-dot" data-index="2"></div>
                     <div class="pin-dot" data-index="3"></div>
                 </div>
-                <p id="pin-error" class="text-center fw-semibold small mb-3" style="color:var(--danger);min-height:1.2em;"></p>
-                <div class="row g-2 mx-auto" style="max-width:290px;">
-                    <div class="col-4"><button class="key-btn" data-key="1">1</button></div>
-                    <div class="col-4"><button class="key-btn" data-key="2">2</button></div>
-                    <div class="col-4"><button class="key-btn" data-key="3">3</button></div>
-                    <div class="col-4"><button class="key-btn" data-key="4">4</button></div>
-                    <div class="col-4"><button class="key-btn" data-key="5">5</button></div>
-                    <div class="col-4"><button class="key-btn" data-key="6">6</button></div>
-                    <div class="col-4"><button class="key-btn" data-key="7">7</button></div>
-                    <div class="col-4"><button class="key-btn" data-key="8">8</button></div>
-                    <div class="col-4"><button class="key-btn" data-key="9">9</button></div>
-                    <div class="col-4"><button class="key-btn key-fn" id="key-cancel" data-key="cancel"><i class="fas fa-xmark"></i></button></div>
+                <p id="pin-error" class="text-center fw-semibold mb-3 px-4" style="color:var(--danger);min-height:1.2em;font-size:.8rem;"></p>
+
+                <!-- Demo hint -->
+                <p class="text-center mb-3 px-4" style="color:#9ca3af;font-size:.72rem;">
+                    <i class="fas fa-circle-info me-1"></i>Demo UPI PIN: <strong style="color:var(--primary);">1234</strong>
+                </p>
+
+                <!-- Numpad — circular keys like real apps -->
+                <div class="row g-1 mx-auto px-6" style="max-width:300px;padding-left:24px;padding-right:24px;">
+                    <div class="col-4"><button class="key-btn" data-key="1"><span>1</span></button></div>
+                    <div class="col-4"><button class="key-btn" data-key="2"><span>2</span><span style="font-size:.5rem;display:block;color:#9ca3af;line-height:1;font-weight:500;">ABC</span></button></div>
+                    <div class="col-4"><button class="key-btn" data-key="3"><span>3</span><span style="font-size:.5rem;display:block;color:#9ca3af;line-height:1;font-weight:500;">DEF</span></button></div>
+                    <div class="col-4"><button class="key-btn" data-key="4"><span>4</span><span style="font-size:.5rem;display:block;color:#9ca3af;line-height:1;font-weight:500;">GHI</span></button></div>
+                    <div class="col-4"><button class="key-btn" data-key="5"><span>5</span><span style="font-size:.5rem;display:block;color:#9ca3af;line-height:1;font-weight:500;">JKL</span></button></div>
+                    <div class="col-4"><button class="key-btn" data-key="6"><span>6</span><span style="font-size:.5rem;display:block;color:#9ca3af;line-height:1;font-weight:500;">MNO</span></button></div>
+                    <div class="col-4"><button class="key-btn" data-key="7"><span>7</span><span style="font-size:.5rem;display:block;color:#9ca3af;line-height:1;font-weight:500;">PQRS</span></button></div>
+                    <div class="col-4"><button class="key-btn" data-key="8"><span>8</span><span style="font-size:.5rem;display:block;color:#9ca3af;line-height:1;font-weight:500;">TUV</span></button></div>
+                    <div class="col-4"><button class="key-btn" data-key="9"><span>9</span><span style="font-size:.5rem;display:block;color:#9ca3af;line-height:1;font-weight:500;">WXYZ</span></button></div>
+                    <div class="col-4"><button class="key-btn key-fn" id="key-cancel" data-key="cancel" style="font-size:.78rem;">Cancel</button></div>
                     <div class="col-4"><button class="key-btn" data-key="0">0</button></div>
                     <div class="col-4"><button class="key-btn key-fn" data-key="backspace"><i class="fas fa-delete-left"></i></button></div>
                 </div>
             </div>
 
+            <!-- ══ Step 2: Processing ══ -->
             <div id="upi-step-processing" class="upi-step hidden">
-                <div class="text-center py-5">
+                <div class="text-center py-4">
                     <div class="upi-processing-ring mx-auto mb-4">
                         <div class="upi-ring-outer"></div>
                         <div class="upi-ring-inner"></div>
-                        <i class="fas fa-lock fs-5 absolute-center" style="color:var(--primary);z-index:10;"></i>
+                        <i class="fas fa-lock fs-5 absolute-center" style="color:var(--primary);z-index:10;position:absolute;"></i>
                     </div>
-                    <p class="fw-semibold fs-5 mb-2" style="color:var(--text-primary);">Processing Payment…</p>
+                    <p class="fw-semibold fs-6 mb-1" style="color:var(--text-primary);">Processing Payment…</p>
                     <p id="upi-processing-msg" class="small mb-4" style="color:var(--text-secondary);">Contacting bank...</p>
                     <div class="d-flex gap-2 justify-content-center">
                         <span class="loading-dot"></span><span class="loading-dot delay-1"></span><span class="loading-dot delay-2"></span>
@@ -397,19 +444,20 @@
                 </div>
             </div>
 
+            <!-- ══ Step 3: Success ══ -->
             <div id="upi-step-success" class="upi-step hidden">
-                <div class="text-center py-4">
-                    <div class="upi-success-circle mx-auto mb-4">
+                <div class="text-center pt-2 pb-2">
+                    <div class="upi-success-circle mx-auto mb-3">
                         <svg class="upi-checkmark" viewBox="0 0 52 52">
                             <circle class="upi-checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
                             <path  class="upi-checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
                         </svg>
                     </div>
-                    <h3 class="fw-bold mb-1" style="color:var(--success);">Payment Successful!</h3>
-                    <p id="upi-success-amount" class="fw-black mb-3" style="font-size:1.8rem;color:var(--text-primary);">&#8377;0.00</p>
-                    <div id="upi-success-details" class="rounded-3 p-3 text-start mb-4 small"
-                         style="background:rgba(99,102,241,.04);border:1px solid rgba(99,102,241,.1);"></div>
-                    <button id="upi-done-btn" class="btn-glow-primary w-100 justify-content-center py-3 fw-bold"
+                    <h3 class="fw-bold mb-1" style="color:var(--success);font-size:1.15rem;">Payment Successful!</h3>
+                    <p id="upi-success-amount" class="fw-black mb-2" style="font-size:1.6rem;color:var(--text-primary);">&#8377;0.00</p>
+                    <div id="upi-success-details" class="rounded-3 p-2 text-start mb-3 small"
+                         style="background:rgba(99,102,241,.04);border:1px solid rgba(99,102,241,.1);font-size:.78rem;"></div>
+                    <button id="upi-done-btn" class="btn-glow-primary w-100 justify-content-center py-2 fw-bold"
                             style="background:linear-gradient(135deg,#10b981,#059669);box-shadow:0 4px 14px rgba(16,185,129,.4);">
                         <i class="fas fa-check-circle me-2"></i>Done
                     </button>
