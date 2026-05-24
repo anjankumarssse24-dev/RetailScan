@@ -56,8 +56,9 @@ class Config:
     # Camera settings
     CAMERA_INDEX = 0
 
-    # Email — Resend API (HTTPS, works on Render free tier)
-    RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "").strip()
+    # Email — Brevo (Sendinblue) API (HTTPS, works on Render free tier, no domain needed)
+    BREVO_API_KEY = os.environ.get("BREVO_API_KEY", "").strip()
+    EMAIL_FROM    = os.environ.get("EMAIL_USER", "anjan23102002@gmail.com").strip()
 
     # Legacy SMTP settings (kept for local testing only)
     SMTP_SERVER = "smtp.gmail.com"

@@ -286,15 +286,15 @@ def _build_analytics_sections(analytics: dict) -> str:
 def send_payment_email(user_email, transaction_id, timestamp, items, total_amount,
                        analytics=None):
     """
-    Send an analytics-enhanced HTML payment receipt email via Resend API (HTTPS).
+    Send an analytics-enhanced HTML payment receipt email via Brevo API (HTTPS).
     Runs in a background thread to not block the response.
     """
     def _send():
         try:
-            if not Config.RESEND_API_KEY:
-                print("[EMAIL] Skipped — RESEND_API_KEY not configured")
+            if not Config.BREVO_API_KEY:
+                print("[EMAIL] Skipped — BREVO_API_KEY not configured")
                 return
-            print(f"[EMAIL] Sending via Resend to {user_email}...")
+            print(f"[EMAIL] Sending via Brevo to {user_email}...")
             plain = (
                 f"Payment Successful!\n\nTransaction ID: {transaction_id}\n"
                 f"Amount: Rs.{total_amount:.2f}\nDate: {timestamp}\n\n"
@@ -303,24 +303,24 @@ def send_payment_email(user_email, transaction_id, timestamp, items, total_amoun
             html = _build_receipt_html(transaction_id, timestamp, items, total_amount,
                                        analytics=analytics)
             resp = requests.post(
-                "https://api.resend.com/emails",
+                "https://api.brevo.com/v3/smtp/email",
                 headers={
-                    "Authorization": f"Bearer {Config.RESEND_API_KEY}",
+                    "api-key": Config.BREVO_API_KEY,
                     "Content-Type": "application/json",
                 },
                 json={
-                    "from": "RetailScan <onboarding@resend.dev>",
-                    "to": [user_email],
+                    "sender": {"name": "RetailScan", "email": Config.EMAIL_FROM},
+                    "to": [{"email": user_email}],
                     "subject": f"Payment Receipt — Rs.{total_amount:.2f} | RetailScan",
-                    "html": html,
-                    "text": plain,
+                    "htmlContent": html,
+                    "textContent": plain,
                 },
                 timeout=30,
             )
             if resp.status_code in (200, 201):
-                print(f"[EMAIL] Receipt sent to {user_email} via Resend")
+                print(f"[EMAIL] Receipt sent to {user_email} via Brevo")
             else:
-                print(f"[EMAIL] Resend error {resp.status_code}: {resp.text}")
+                print(f"[EMAIL] Brevo error {resp.status_code}: {resp.text}")
         except Exception as e:
             print(f"[EMAIL] Failed: {e}")
 

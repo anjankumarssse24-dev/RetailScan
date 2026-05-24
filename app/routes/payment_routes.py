@@ -16,27 +16,25 @@ payment_bp = Blueprint("payment", __name__)
 
 @payment_bp.route("/api/test-email", methods=["GET"])
 def test_email():
-    """Synchronous Resend API test — visit /api/test-email to diagnose email on Render."""
-    key = Config.RESEND_API_KEY
+    """Synchronous Brevo API test — visit /api/test-email to diagnose email on Render."""
+    key = Config.BREVO_API_KEY
     if not key:
-        return jsonify({"ok": False, "error": "RESEND_API_KEY env var not set"}), 500
-    # Debug: show key length and prefix so you can verify it's correct
+        return jsonify({"ok": False, "error": "BREVO_API_KEY env var not set"}), 500
     key_debug = f"{key[:6]}...{key[-4:]} (len={len(key)})"
     try:
         resp = requests.post(
-            "https://api.resend.com/emails",
-            headers={"Authorization": f"Bearer {key}",
-                     "Content-Type": "application/json"},
+            "https://api.brevo.com/v3/smtp/email",
+            headers={"api-key": key, "Content-Type": "application/json"},
             json={
-                "from": "RetailScan <onboarding@resend.dev>",
-                "to": [Config.EMAIL_USER or "anjan23102002@gmail.com"],
+                "sender": {"name": "RetailScan", "email": Config.EMAIL_FROM},
+                "to": [{"email": Config.EMAIL_FROM}],
                 "subject": "RetailScan Email Test",
-                "text": "SMTP test from Render via Resend — it works!",
+                "textContent": "Brevo test from Render — it works!",
             },
             timeout=15,
         )
-        if resp.status_code in (200, 201):
-            return jsonify({"ok": True, "sent_to": Config.EMAIL_USER or "anjan23102002@gmail.com", "key_debug": key_debug})
+        if resp.status_code in (200, 201, 204):
+            return jsonify({"ok": True, "sent_to": Config.EMAIL_FROM, "key_debug": key_debug})
         return jsonify({"ok": False, "error": resp.text, "key_debug": key_debug}), 500
     except Exception as e:
         return jsonify({"ok": False, "error": str(e), "key_debug": key_debug}), 500
