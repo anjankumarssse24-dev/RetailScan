@@ -95,7 +95,7 @@ def _build_receipt_html(transaction_id, timestamp, items, total_amount,
         '<table role="presentation" width="100%" cellpadding="0" cellspacing="0">'
         '<tr><td style="padding:10px 0;border-bottom:1px solid #f3f4f6;">'
         '<span style="font-size:12px;color:#9ca3af;text-transform:uppercase;letter-spacing:.8px;">Transaction ID</span><br>'
-        f'<span style="font-size:14px;font-weight:700;color:#1e1b4b;font-family:'Courier New',monospace;">{transaction_id}</span>'
+        f'<span style="font-size:14px;font-weight:700;color:#1e1b4b;font-family:Courier New,monospace;">{transaction_id}</span>'
         '</td></tr>'
         '<tr><td style="padding:10px 0;border-bottom:1px solid #f3f4f6;">'
         '<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>'
