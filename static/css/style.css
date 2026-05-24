@@ -205,6 +205,13 @@ body {
 
 /* ── CAMERA ── */
 .camera-wrapper { background:linear-gradient(135deg,#f8faff,#f3f0ff);position:relative;overflow:hidden; }
+/* Bulletproof full-cover flex centering for the offline placeholder */
+.cam-placeholder {
+    position:absolute;inset:0;
+    display:flex!important;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:12px;
+}
 .scan-line {
     position:absolute;top:0;left:5%;width:90%;height:2px;
     background:linear-gradient(90deg,transparent,var(--primary),var(--accent),var(--primary),transparent);

@@ -28,7 +28,7 @@ function updateCameraUI(active) {
 
     if (active) {
         feed.classList.remove("hidden");
-        ph.style.display = "none";                 // inline beats any Bootstrap class
+        ph.classList.add("d-none");             // d-none uses !important, beats cam-placeholder's flex
         if (scanLine) scanLine.classList.remove("hidden");
         status.className = "status-pill online";
         status.innerHTML = '<span class="status-dot"></span>LIVE';
@@ -41,7 +41,8 @@ function updateCameraUI(active) {
         if (_mediaStream) { _mediaStream.getTracks().forEach(t => t.stop()); _mediaStream = null; }
         if (feed.srcObject) { feed.srcObject = null; }
         feed.classList.add("hidden");
-        ph.style.display = "";                     // restore natural flex display
+        ph.classList.remove("d-none");          // let cam-placeholder CSS take over
+        ph.style.display = "";                  // clear any inline override
         if (scanLine) scanLine.classList.add("hidden");
         // Hide detect overlay too
         const detOverlay = document.getElementById("camera-detect-overlay");

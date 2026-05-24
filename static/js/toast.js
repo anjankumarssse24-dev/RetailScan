@@ -72,9 +72,12 @@
         const all = container.querySelectorAll(".rs-toast:not(.dismissing)");
         if (all.length > 5) dismiss(all[0]);
 
-        /* Auto-dismiss */
-        const timer = setTimeout(() => dismiss(el), duration);
-        el.addEventListener("mouseenter", () => clearTimeout(timer));
+        /* Auto-dismiss — pause on hover, restart on leave */
+        let autoTimer = setTimeout(() => dismiss(el), duration);
+        el.addEventListener("mouseenter", () => clearTimeout(autoTimer));
+        el.addEventListener("mouseleave", () => {
+            autoTimer = setTimeout(() => dismiss(el), Math.min(duration, 1800));
+        });
 
         return el;
     }
