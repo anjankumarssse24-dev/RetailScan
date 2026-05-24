@@ -28,7 +28,7 @@ function updateCameraUI(active) {
 
     if (active) {
         feed.classList.remove("hidden");
-        ph.classList.add("hidden");
+        ph.style.display = "none";                 // inline beats any Bootstrap class
         if (scanLine) scanLine.classList.remove("hidden");
         status.className = "status-pill online";
         status.innerHTML = '<span class="status-dot"></span>LIVE';
@@ -41,8 +41,11 @@ function updateCameraUI(active) {
         if (_mediaStream) { _mediaStream.getTracks().forEach(t => t.stop()); _mediaStream = null; }
         if (feed.srcObject) { feed.srcObject = null; }
         feed.classList.add("hidden");
-        ph.classList.remove("hidden");
+        ph.style.display = "";                     // restore natural flex display
         if (scanLine) scanLine.classList.add("hidden");
+        // Hide detect overlay too
+        const detOverlay = document.getElementById("camera-detect-overlay");
+        if (detOverlay) detOverlay.style.display = "none";
         status.className = "status-pill offline";
         status.innerHTML = '<span class="status-dot"></span>OFFLINE';
         btnStart.disabled = false;
@@ -137,6 +140,26 @@ function stopScanUI() {
 }
 
 // ========================
+// CAMERA DETECT OVERLAY helpers
+// ========================
+function _showDetectOverlay(html, bg) {
+    const ov = document.getElementById("camera-detect-overlay");
+    if (!ov) return;
+    ov.style.background = bg || "rgba(15,10,40,.82)";
+    ov.innerHTML = html;
+    ov.style.opacity = "1";
+    ov.style.display = "flex";
+}
+function _hideDetectOverlay(delay) {
+    const ov = document.getElementById("camera-detect-overlay");
+    if (!ov) return;
+    setTimeout(() => {
+        ov.style.opacity = "0";
+        setTimeout(() => { ov.style.display = "none"; ov.style.opacity = "1"; }, 350);
+    }, delay || 0);
+}
+
+// ========================
 // CAPTURE & DETECT
 // ========================
 function _doCaptureAndDetect() {
@@ -156,7 +179,30 @@ function _doCaptureAndDetect() {
     const resultArea   = document.getElementById("result-area");
     const overlayLabel = document.getElementById("overlay-label");
 
-    // Show inline processing animation (like payment processing)
+    // ── Show scanning overlay on the LIVE VIDEO FEED ──────────────────────
+    _showDetectOverlay(`
+        <div class="text-center" style="color:#fff;">
+            <div style="position:relative;width:72px;height:72px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+                <div style="position:absolute;inset:0;border:2.5px solid transparent;border-top-color:#6366f1;border-right-color:#6366f1;border-radius:50%;animation:spin 1.2s linear infinite;filter:drop-shadow(0 0 6px #6366f1);"></div>
+                <div style="position:absolute;inset:12px;border:2px solid transparent;border-bottom-color:#8b5cf6;border-left-color:#8b5cf6;border-radius:50%;animation:spin 1.8s linear infinite reverse;"></div>
+                <i class="fas fa-barcode" style="color:#a5b4fc;font-size:1.3rem;z-index:10;position:relative;"></i>
+            </div>
+            <p id="feed-scan-msg" style="font-size:.9rem;font-weight:700;margin:0 0 6px;letter-spacing:.3px;">Capturing image…</p>
+            <div style="display:flex;gap:6px;justify-content:center;">
+                <span class="loading-dot"></span><span class="loading-dot delay-1"></span><span class="loading-dot delay-2"></span>
+            </div>
+        </div>`, "rgba(10,8,30,.84)");
+
+    // Cycle messages on the overlay while waiting
+    const _overlayMsgs = ["Capturing image…","Analyzing frame…","Scanning products…","Identifying items…","Almost done…"];
+    let _omi = 0;
+    const _omTimer = setInterval(() => {
+        _omi = Math.min(_omi + 1, _overlayMsgs.length - 1);
+        const m = document.getElementById("feed-scan-msg");
+        if (m) m.textContent = _overlayMsgs[_omi];
+    }, 1800);
+
+    // ── Show processing spinner in result area ────────────────────────────
     resultArea.innerHTML = `
         <div class="text-center py-5 w-100">
             <div class="upi-processing-ring mx-auto mb-4">
@@ -182,8 +228,17 @@ function _doCaptureAndDetect() {
         fetch("/api/capture", { method: "POST", body: formData })
         .then(r => r.json())
         .then(data => {
+            clearInterval(_omTimer);
             stopScanUI();
             if (!data.success) {
+                // Show error on video feed overlay briefly
+                _showDetectOverlay(`
+                    <div class="text-center" style="color:#fff;">
+                        <i class="fas fa-exclamation-triangle" style="font-size:2rem;color:#fca5a5;margin-bottom:10px;"></i>
+                        <p style="font-size:.9rem;font-weight:700;margin:0;">Detection failed</p>
+                        <p style="font-size:.75rem;opacity:.7;margin:4px 0 0;">Try again</p>
+                    </div>`, "rgba(127,29,29,.84)");
+                _hideDetectOverlay(2200);
                 const rawErr = (data.error || "").toLowerCase();
                 const msg = rawErr.includes("quota") || rawErr.includes("rate") ? "Server is busy — please try again in a moment."
                           : rawErr.includes("offline") || rawErr.includes("network") ? "No internet connection detected."
@@ -207,6 +262,14 @@ function _doCaptureAndDetect() {
             const description = data.description || "";
 
             if (items.length === 0) {
+                // No-product overlay on video feed
+                _showDetectOverlay(`
+                    <div class="text-center" style="color:#fff;">
+                        <i class="fas fa-search-minus" style="font-size:2rem;color:#fca5a5;margin-bottom:10px;"></i>
+                        <p style="font-size:.9rem;font-weight:700;margin:0;">No products found</p>
+                        <p style="font-size:.75rem;opacity:.7;margin:4px 0 0;">Try better lighting or move closer</p>
+                    </div>`, "rgba(100,20,20,.82)");
+                _hideDetectOverlay(2500);
                 overlayLabel.textContent = "No product found";
                 overlayLabel.classList.remove("hidden");
                 setTimeout(() => overlayLabel.classList.add("hidden"), 5000);
@@ -222,6 +285,25 @@ function _doCaptureAndDetect() {
                 showToast("No products found — try again", "error");
                 return;
             }
+
+            // ── Show brief success overlay on video feed, then fade back to live ──
+            const itemLines = items.slice(0, 3).map(it =>
+                `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.12);gap:20px;">
+                    <span style="font-size:.8rem;font-weight:600;">${it.name}</span>
+                    <span style="font-size:.85rem;font-weight:800;color:#6ee7b7;">₹${it.unit_price}</span>
+                 </div>`
+            ).join("");
+            const moreLabel = items.length > 3 ? `<p style="font-size:.7rem;opacity:.6;margin:6px 0 0;text-align:center;">+${items.length - 3} more</p>` : "";
+            _showDetectOverlay(`
+                <div style="color:#fff;width:85%;max-width:280px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;justify-content:center;">
+                        <i class="fas fa-check-circle" style="font-size:1.4rem;color:#34d399;"></i>
+                        <span style="font-size:.95rem;font-weight:800;">${totalItems} product${totalItems > 1 ? 's' : ''} detected</span>
+                    </div>
+                    ${itemLines}${moreLabel}
+                    <p style="font-size:.72rem;opacity:.55;text-align:center;margin:10px 0 0;"><i class="fas fa-arrow-right me-1"></i>Camera ready for next scan</p>
+                </div>`, "rgba(5,50,36,.88)");
+            _hideDetectOverlay(2800);
 
             overlayLabel.textContent = items[0].name;
             overlayLabel.classList.remove("hidden");
@@ -364,8 +446,49 @@ function addToCart(detectionId, productName, category, price) {
         body: JSON.stringify({ detection_id: detectionId, product_name: productName, category: category, price: price })
     })
     .then(r => r.json())
-    .then(d => { if (d.success) { showToast(`${productName} added to cart!`); updateCartCount(); } else { showToast(d.error, "error"); } })
+    .then(d => {
+        if (d.success) {
+            showToast(`${productName} added to cart!`);
+            updateCartCount();
+            // Animate out and remove this item's card from Detection Results
+            const btn = document.querySelector(`.detected-item-card [data-did="${detectionId}"]`);
+            if (btn) {
+                const card = btn.closest(".detected-item-card");
+                if (card) {
+                    card.style.transition = "opacity .3s, transform .3s";
+                    card.style.opacity = "0";
+                    card.style.transform = "translateX(40px)";
+                    setTimeout(() => {
+                        card.remove();
+                        _checkDetectionEmpty();
+                    }, 320);
+                }
+            }
+        } else {
+            showToast(d.error, "error");
+        }
+    })
     .catch(e => showToast("Error: " + e.message, "error"));
+}
+
+function _checkDetectionEmpty() {
+    const resultArea = document.getElementById("result-area");
+    if (!resultArea) return;
+    const remaining = resultArea.querySelectorAll(".detected-item-card").length;
+    if (remaining === 0) {
+        // Replace with a "all added" message; keep the captured image if present
+        const imgEl = resultArea.querySelector("img");
+        const imgHTML = imgEl ? `<img src="${imgEl.src}" class="w-100 rounded-3 mb-3" style="${imgEl.getAttribute('style') || ''}" alt="Captured">` : "";
+        resultArea.innerHTML = `
+            <div class="w-100">
+                ${imgHTML}
+                <div class="text-center py-4">
+                    <i class="fas fa-cart-check" style="font-size:2.5rem;color:var(--success);"></i>
+                    <p class="fw-bold mt-3 mb-1" style="color:var(--success);">All items added to cart!</p>
+                    <p class="small mb-0" style="color:var(--text-secondary);">Capture another image to scan more products</p>
+                </div>
+            </div>`;
+    }
 }
 
 function addAllToCart(items) {
@@ -377,7 +500,25 @@ function addAllToCart(items) {
             body: JSON.stringify({ detection_id: item.detection_id, product_name: item.name, category: item.category, price: item.unit_price })
         }).then(r => r.json()).then(d => { if (d.success) added++; })
     );
-    Promise.all(promises).then(() => { showToast(`${added} item${added > 1 ? 's' : ''} added to cart!`); updateCartCount(); });
+    Promise.all(promises).then(() => {
+        showToast(`${added} item${added > 1 ? 's' : ''} added to cart!`);
+        updateCartCount();
+        // Clear detection results area
+        const resultArea = document.getElementById("result-area");
+        if (resultArea) {
+            const imgEl = resultArea.querySelector("img");
+            const imgHTML = imgEl ? `<img src="${imgEl.src}" class="w-100 rounded-3 mb-3" style="${imgEl.getAttribute('style') || ''}" alt="Captured">` : "";
+            resultArea.innerHTML = `
+                <div class="w-100">
+                    ${imgHTML}
+                    <div class="text-center py-4">
+                        <i class="fas fa-cart-check" style="font-size:2.5rem;color:var(--success);"></i>
+                        <p class="fw-bold mt-3 mb-1" style="color:var(--success);">All ${added} item${added > 1 ? 's' : ''} added to cart!</p>
+                        <p class="small mb-0" style="color:var(--text-secondary);">Capture another image to scan more products</p>
+                    </div>
+                </div>`;
+        }
+    });
 }
 
 // Init — camera always starts inactive (browser getUserMedia)
