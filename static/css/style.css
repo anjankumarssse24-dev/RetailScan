@@ -607,7 +607,7 @@ body {
 /* ── Detected item card responsive tweak ── */
 @media (max-width: 480px) {
     .detected-item-card { padding: 12px; }
-    .cart-item-card      { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
+    .cart-item-card      { padding: 12px 14px; gap: 10px; }
 }
 
 /* ── UPI modal full-width on tiny phones ── */

@@ -27,7 +27,7 @@ function loadCart() {
 
         container.innerHTML = data.items.map((item, i) => `
             <div class="cart-item-card" style="animation-delay:${i * 0.08}s">
-                <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center gap-3" style="flex:1;min-width:0;">
                     <div class="icon-badge icon-badge-primary flex-shrink-0">
                         <i class="fas fa-box"></i>
                     </div>
