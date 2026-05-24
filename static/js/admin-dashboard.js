@@ -41,18 +41,40 @@ function setVal(id, value) {
 }
 
 // ========================
-// REVENUE TREND CHART
+// REVENUE TREND CHART (real DB data)
 // ========================
-function drawRevenueChart() {
+async function drawRevenueChart() {
     const canvas = document.getElementById("revenue-chart");
     if (!canvas || typeof Chart === "undefined") return;
+
+    let labels = [], values = [];
+    try {
+        const res  = await fetch("/admin/api/revenue-trend");
+        const data = await res.json();
+        if (data.success && data.data.length > 0) {
+            // Format "2026-05" → "May'26"
+            const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+            labels = data.data.map(r => {
+                const [y, m] = r.month.split("-");
+                return monthNames[parseInt(m, 10) - 1] + "'" + y.slice(2);
+            });
+            values = data.data.map(r => r.revenue);
+        } else {
+            // No data yet — show zeroed placeholder
+            labels = ["No data yet"];
+            values = [0];
+        }
+    } catch (e) {
+        labels = ["Error"]; values = [0];
+    }
+
     new Chart(canvas, {
         type: "line",
         data: {
-            labels: ["Dec", "Jan", "Feb", "Mar", "Apr", "May"],
+            labels,
             datasets: [{
                 label: "Revenue (INR)",
-                data: [42800, 38500, 51200, 47600, 63100, 71400],
+                data: values,
                 borderColor: "#6366f1",
                 backgroundColor: "rgba(99,102,241,0.08)",
                 tension: 0.4, fill: true,
@@ -69,8 +91,10 @@ function drawRevenueChart() {
             scales: {
                 x: { grid: { display: false }, ticks: { color: "#6b7280", font: { size: 11 } } },
                 y: {
+                    beginAtZero: true,
                     grid: { color: "rgba(99,102,241,0.06)" },
-                    ticks: { color: "#6b7280", font: { size: 11 }, callback: v => "Rs " + (v/1000) + "k" }
+                    ticks: { color: "#6b7280", font: { size: 11 },
+                             callback: v => v >= 1000 ? "Rs " + (v/1000).toFixed(1) + "k" : "Rs " + v }
                 }
             }
         }
@@ -78,18 +102,33 @@ function drawRevenueChart() {
 }
 
 // ========================
-// TOP PRODUCTS CHART
+// TOP PRODUCTS CHART (real DB data)
 // ========================
-function drawTopProducts() {
+async function drawTopProducts() {
     const canvas = document.getElementById("top-products-chart");
     if (!canvas || typeof Chart === "undefined") return;
+
+    let labels = [], values = [];
+    try {
+        const res  = await fetch("/admin/api/top-products");
+        const data = await res.json();
+        if (data.success && data.products.length > 0) {
+            labels = data.products.map(p => p.name);
+            values = data.products.map(p => p.units);
+        } else {
+            labels = ["No transactions yet"]; values = [0];
+        }
+    } catch (e) {
+        labels = ["Error"]; values = [0];
+    }
+
     new Chart(canvas, {
         type: "bar",
         data: {
-            labels: ["Milk 1L", "Fresh Bread", "Rice 5kg", "Eggs x12", "Chips 100g"],
+            labels,
             datasets: [{
                 label: "Units Sold",
-                data: [284, 231, 198, 176, 154],
+                data: values,
                 backgroundColor: [
                     "rgba(99,102,241,.8)", "rgba(139,92,246,.8)",
                     "rgba(6,182,212,.8)", "rgba(16,185,129,.8)", "rgba(245,158,11,.8)"
@@ -101,7 +140,7 @@ function drawTopProducts() {
             indexAxis: "y", responsive: true, maintainAspectRatio: false,
             plugins: { legend: { display: false } },
             scales: {
-                x: { grid: { color: "rgba(99,102,241,.06)" }, ticks: { color: "#6b7280", font: { size: 11 } } },
+                x: { beginAtZero: true, grid: { color: "rgba(99,102,241,.06)" }, ticks: { color: "#6b7280", font: { size: 11 } } },
                 y: { grid: { display: false }, ticks: { color: "#374151", font: { size: 11 } } }
             }
         }
@@ -109,31 +148,33 @@ function drawTopProducts() {
 }
 
 // ========================
-// RECENT ACTIVITY FEED
+// RECENT ACTIVITY FEED (real transactions)
 // ========================
-const ACTIVITY = [
-    { icon: "fa-bag-shopping",  color: "emerald", text: "Order #TXN-1091 placed",     time: "2 min ago",  sub: "Rs 1,249 · 5 items" },
-    { icon: "fa-user-plus",     color: "primary",  text: "New customer registered",   time: "8 min ago",  sub: "priya.sharma@gmail.com" },
-    { icon: "fa-star",          color: "amber",    text: "Gold tier upgrade",          time: "14 min ago", sub: "Rahul Verma -- Gold" },
-    { icon: "fa-circle-check",  color: "cyan",     text: "Order #TXN-1090 paid",       time: "23 min ago", sub: "Rs 849 · UPI" },
-    { icon: "fa-shield-halved", color: "violet",   text: "Admin login detected",       time: "1 hr ago",   sub: "admin@gmail.com" },
-];
-
-function renderActivity() {
+async function renderActivity() {
     const list = document.getElementById("activity-feed");
     if (!list) return;
-    list.innerHTML = ACTIVITY.map(a => `
-        <div class="d-flex align-items-start gap-3 py-3 rs-activity-row">
-            <div class="icon-badge icon-badge-${a.color}" style="width:36px;height:36px;border-radius:10px;font-size:.78rem;flex-shrink:0;">
-                <i class="fas ${a.icon}"></i>
-            </div>
-            <div class="flex-grow-1" style="min-width:0;">
-                <p class="mb-0 fw-semibold rs-truncate" style="color:var(--text-primary);font-size:.85rem;">${a.text}</p>
-                <p class="mb-0 rs-truncate" style="color:var(--text-secondary);font-size:.75rem;">${a.sub}</p>
-            </div>
-            <span class="flex-shrink-0 rs-text-xs" style="color:var(--text-secondary);white-space:nowrap;">${a.time}</span>
-        </div>
-    `).join("");
+    try {
+        const res  = await fetch("/admin/api/recent-activity");
+        const data = await res.json();
+        if (data.success && data.activity.length > 0) {
+            list.innerHTML = data.activity.map(t => `
+                <div class="d-flex align-items-start gap-3 py-3 rs-activity-row">
+                    <div class="icon-badge icon-badge-emerald" style="width:36px;height:36px;border-radius:10px;font-size:.78rem;flex-shrink:0;">
+                        <i class="fas fa-bag-shopping"></i>
+                    </div>
+                    <div class="flex-grow-1" style="min-width:0;">
+                        <p class="mb-0 fw-semibold rs-truncate" style="color:var(--text-primary);font-size:.85rem;">Order ${t.transaction_id}</p>
+                        <p class="mb-0 rs-truncate" style="color:var(--text-secondary);font-size:.75rem;">Rs ${t.amount.toFixed(2)} &middot; ${t.items_count} item${t.items_count !== 1 ? "s" : ""}</p>
+                    </div>
+                    <span class="flex-shrink-0 rs-text-xs" style="color:var(--text-secondary);white-space:nowrap;font-size:.72rem;">${t.timestamp.split(" ")[0]}</span>
+                </div>
+            `).join("");
+        } else {
+            list.innerHTML = `<p class="text-center py-4" style="color:var(--text-secondary);font-size:.85rem;">No transactions yet</p>`;
+        }
+    } catch (e) {
+        list.innerHTML = `<p class="text-center py-4" style="color:var(--text-secondary);">Could not load activity</p>`;
+    }
 }
 
 // ========================

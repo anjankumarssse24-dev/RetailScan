@@ -3,6 +3,8 @@ Admin routes - Protected admin dashboard and management pages
 url_prefix: /admin
 All routes require role='admin' via the admin_required decorator.
 """
+import json
+from collections import Counter
 from flask import Blueprint, render_template, redirect, url_for, jsonify, session, request
 from app.services.auth_service import admin_required
 from app.services.db_service import get_connection, set_user_role, get_admin_count, get_user_by_uid
@@ -291,6 +293,89 @@ def discount_stats():
 
         conn.close()
         return jsonify({"success": True, "discount_stats": row, "promo_breakdown": promos})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ========================
+# ADMIN API — REVENUE TREND (real monthly data for chart)
+# ========================
+
+@admin_bp.route("/api/revenue-trend")
+@admin_required
+def revenue_trend():
+    """Return last 12 months of real monthly revenue for the dashboard chart."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT strftime('%Y-%m', timestamp) as month,
+                   COALESCE(SUM(amount), 0)     as revenue,
+                   COUNT(*)                      as orders
+            FROM transactions
+            GROUP BY strftime('%Y-%m', timestamp)
+            ORDER BY month ASC
+            LIMIT 12
+        """)
+        rows = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        return jsonify({"success": True, "data": rows})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ========================
+# ADMIN API — TOP PRODUCTS (real data from transaction items)
+# ========================
+
+@admin_bp.route("/api/top-products")
+@admin_required
+def top_products():
+    """Return top-5 products by units sold (parsed from transaction items_json)."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT items_json FROM transactions WHERE items_json IS NOT NULL"
+        )
+        rows = cursor.fetchall()
+        conn.close()
+
+        counts: Counter = Counter()
+        for row in rows:
+            try:
+                for item in json.loads(row["items_json"]):
+                    name = item.get("name", "Unknown")
+                    counts[name] += int(item.get("qty", 1))
+            except Exception:
+                pass
+
+        top = [{"name": n, "units": q} for n, q in counts.most_common(5)]
+        return jsonify({"success": True, "products": top})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# ========================
+# ADMIN API — RECENT ACTIVITY (real last 5 transactions + user events)
+# ========================
+
+@admin_bp.route("/api/recent-activity")
+@admin_required
+def recent_activity():
+    """Return the 5 most recent transactions for the activity feed."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT transaction_id, amount, items_count, timestamp
+            FROM transactions
+            ORDER BY timestamp DESC
+            LIMIT 5
+        """)
+        txns = [dict(r) for r in cursor.fetchall()]
+        conn.close()
+        return jsonify({"success": True, "activity": txns})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

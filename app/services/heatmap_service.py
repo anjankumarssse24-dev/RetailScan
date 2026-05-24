@@ -115,6 +115,24 @@ CATEGORY_ZONE_MAP: list[tuple[str, str]] = [
     ("recommended",   "offers"),
     ("combo",         "offers"),
     ("offer",         "offers"),
+    # Stationery / general store items → essentials
+    ("stationery",    "essentials"),
+    ("pen",           "essentials"),
+    ("pencil",        "essentials"),
+    ("notebook",      "essentials"),
+    ("book",          "essentials"),
+    ("soap",          "essentials"),
+    ("shampoo",       "essentials"),
+    ("toothpaste",    "essentials"),
+    ("detergent",     "essentials"),
+    ("medicine",      "essentials"),
+    ("health",        "essentials"),
+    ("candy",         "snacks"),
+    ("chocolate",     "snacks"),
+    ("sweet",         "snacks"),
+    ("ice cream",     "dairy"),
+    ("ice-cream",     "dairy"),
+    ("paneer",        "dairy"),
 ]
 
 # Product name keyword → zone (fallback)
@@ -127,6 +145,16 @@ PRODUCT_ZONE_KEYWORDS: list[tuple[str, str]] = [
     ("cheese",    "dairy"),    ("yogurt",    "dairy"),
     ("bread",     "essentials"),("rice",     "essentials"),("maggi", "essentials"),
     ("noodle",    "essentials"),("pasta",    "essentials"),("dal",   "essentials"),
+    # Stationery
+    ("pen",       "essentials"),("pencil",   "essentials"),("eraser","essentials"),
+    ("ruler",     "essentials"),("notebook", "essentials"),("book",  "essentials"),
+    ("scale",     "essentials"),("marker",   "essentials"),("highlighter","essentials"),
+    # Personal care / hygiene
+    ("soap",      "essentials"),("shampoo",  "essentials"),("toothpaste","essentials"),
+    ("detergent", "essentials"),("lotion",   "essentials"),
+    # Confectionery → snacks
+    ("chocolate", "snacks"),    ("candy",    "snacks"),    ("sweet", "snacks"),
+    ("lollipop",  "snacks"),    ("gum",      "snacks"),
 ]
 
 # ================================================================

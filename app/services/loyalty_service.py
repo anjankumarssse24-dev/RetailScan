@@ -103,7 +103,10 @@ def get_loyalty_summary(firebase_uid: str) -> dict:
     else:
         span         = next_target - prev_threshold
         earned       = max(0.0, total_spent - prev_threshold)
-        progress_pct = min(100, round((earned / span) * 100)) if span > 0 else 100
+        raw_pct      = round((earned / span) * 100, 1) if span > 0 else 100
+        # Show at least 1% progress so the bar is visually non-empty
+        progress_pct = max(1, int(raw_pct)) if earned > 0 else 0
+        progress_pct = min(100, progress_pct)
         points_to_next  = max(0.0, next_target - total_spent)
         next_tier_target = next_target
 

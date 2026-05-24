@@ -19,11 +19,29 @@ function loadWalletBalance() {
 
 function loadPaymentInfo() {
     loadWalletBalance();
-    fetch("/api/cart").then(r => r.json()).then(d => {
-        paymentAmount = d.total;
-        document.getElementById("pay-items-count").textContent = d.items.length;
-        document.getElementById("pay-total").textContent = `\u20B9${d.total.toFixed(2)}`;
-        document.querySelectorAll(".nav-cart-badge").forEach(el => { el.textContent = d.items.length; });
+    fetch("/api/cart/summary").then(r => r.json()).then(d => {
+        const subtotal      = d.subtotal      || 0;
+        const finalTotal    = d.final_total   || 0;
+        const totalDiscount = d.total_discount || 0;
+        paymentAmount = finalTotal;
+
+        document.getElementById("pay-items-count").textContent = d.items ? d.items.length : 0;
+        document.querySelectorAll(".nav-cart-badge").forEach(el => { el.textContent = d.items ? d.items.length : 0; });
+
+        // Show subtotal row (only if there is a discount)
+        const subtotalRow = document.getElementById("pay-subtotal-row");
+        const discountRow = document.getElementById("pay-discount-row");
+        if (subtotalRow) subtotalRow.style.display = totalDiscount > 0 ? "flex" : "none";
+        if (discountRow) discountRow.style.display = totalDiscount > 0 ? "flex" : "none";
+
+        const subtotalEl  = document.getElementById("pay-subtotal");
+        const discountEl  = document.getElementById("pay-discount");
+        const discLabelEl = document.getElementById("pay-discount-label");
+        if (subtotalEl) subtotalEl.textContent = `\u20B9${subtotal.toFixed(2)}`;
+        if (discountEl) discountEl.textContent = `-\u20B9${totalDiscount.toFixed(2)}`;
+        if (discLabelEl && d.promo_name) discLabelEl.textContent = d.promo_icon ? `${d.promo_icon} ${d.promo_name}` : d.promo_name;
+
+        document.getElementById("pay-total").textContent = `\u20B9${finalTotal.toFixed(2)}`;
     });
 }
 
@@ -172,6 +190,9 @@ function verifyPin() {
 
                 // Store data for the main page success view
                 window._lastPayment = data;
+
+                // Refresh navbar user info (points + tier updated)
+                if (typeof loadUserInfo === "function") loadUserInfo();
 
                 const badge = document.getElementById("nav-cart-count");
                 if (badge) badge.textContent = "0";

@@ -90,7 +90,7 @@ ACTIVE_PROMOS = [
     },
 ]
 
-MAX_COMBINED_DISCOUNT_PCT = 50   # Safety cap
+MAX_COMBINED_DISCOUNT_PCT = 100  # Allow flat discounts to zero out small carts
 
 
 # ================================================================
